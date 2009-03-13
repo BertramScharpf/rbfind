@@ -16,6 +16,6 @@ end
 task :default => "README"
 
 task :clean do |t|
-  sh "rm", "README"
+  sh "rm", "-fv", "README"
 end
 
