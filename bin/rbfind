@@ -19,6 +19,7 @@ OPTIONS = [
   [ %w(--examples  -X), nil,  "print this help and examples"],
   [ %w(--version   -V), nil,  "print version information"],
   [ %w(--verbose   -v), nil,  "standard Ruby error reports"],
+  [ %w(--show      -o), nil,  "just show Ruby block built from options"],
   [ %w(--bw        -w), nil,  "black and white on -p or default output"],
   [ %w(--colored   -c), nil,  "force color on -p or default output"],
   [ %w(--depth     -d), nil,  "yield directory after its contents"],
@@ -188,6 +189,7 @@ begin
       when '--version'   then puts PROGRAM   ; exit
       when '--examples'  then usage_examples ; exit
       when '--verbose'   then @verbose = true
+      when '--show'      then @show = true
       when '--bw'        then @color = false
       when '--colored'   then @color = true
       when '--depth'     then @params[ :depth] = true
@@ -285,6 +287,31 @@ eval "END   { #@blkend   }" if @blkend
 args = $*.dup
 args.push $stdin.read.map { |l| l.chomp } unless args.any? or $stdin.tty?
 @params[ :dir_error] = @params[ :file_error] = proc { |e| $stderr.puts e }
+
+if @show then
+  class Proc
+    def to_s
+      "#<%s:0x%08x>" % [ self.class, object_id]
+    end
+  end
+  INDENT = " "*2
+  def puts_val *args
+    l = [ INDENT, *args].join ""
+    puts l
+  end
+  puts "arguments:"
+  args.each { |a| puts_val a }.any?              or puts_val "(none)"
+  puts "parameters:"
+  @params.each { |k,v| puts_val k, "=", v }.any? or puts_val "(none)"
+  puts "block:"
+  self.class.constants.grep( /^RE(_[A-Z]+)?$/).each { |re|
+    v = self.class.const_get re
+    puts_val re, "=", v
+  }
+  puts_val block
+  exit
+end
+
 error_handle do
   RbFind.open args, @params do |f| f.instance_eval block end
 end
