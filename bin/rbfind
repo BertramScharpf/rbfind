@@ -1,0 +1,291 @@
+#!/usr/bin/ruby
+
+#
+#  rbfind  --  Ruby Find with many features
+#
+
+# $Id: rbfind 239 2008-08-21 10:31:05Z bsch $
+
+PROGRAM = <<EOT
+rbfind 1.2.1  --  A find tool using Ruby
+
+  Author: Bertram Scharpf <software@bertram-scharpf.de>
+  License: BSD
+EOT
+
+OPTIONS = [
+  #    options          arg   description
+  [ %w(--help      -h), nil,  "print this help"],
+  [ %w(--examples  -X), nil,  "print this help and examples"],
+  [ %w(--version   -V), nil,  "print version information"],
+  [ %w(--verbose   -v), nil,  "standard Ruby error reports"],
+  [ %w(--bw        -w), nil,  "black and white on -p or default output"],
+  [ %w(--colored   -c), nil,  "force color on -p or default output"],
+  [ %w(--depth     -d), nil,  "yield directory after its contents"],
+  [ %w(--maxdepth  -m), :num, "maxium step depth"],
+  [ %w(--sort      -s), :str, "=reverse/desc/-1,unsorted; default is sorted"],
+  [ %w(--sort-by   -S), :str, "sort expression ('name' is name)"],
+  [ %w(--require   -r), :rb,  "require library"],
+  [ %w(--puts-path -p), nil,  "do 'puts path' on true block"],
+  [ %w(--lines     -l), nil,  "surround block by 'lines { |$_,$.| ... }'"],
+  [ %w(--reallines -L), nil,  "same as -l but stop at any null character"],
+  [ %w(--grep      -g), nil,  "grep files (implies -pL)"],
+  [ %w(--igrep     -G), nil,  "case insensitive grep"],
+  [ %w(--no-vcs    -C), nil,  "prune version control dirs (CVS/.svn/.git)"],
+  [ %w(--no-swap   -W), nil,  "ignore Vim swapfiles"],
+  [ %w(--skip      -k), :lst, "filenames to skip"],
+  [ %w(--demand    -D), :lst, "skip all filenames but these"],
+  [ %w(--ext       -e), :lst, "skip all filename extensions but these"],
+  [ %w(--begin     -B), :blk, "BEGIN block"],
+  [ %w(--end       -E), :blk, "END block"],
+]
+
+def usage
+  puts <<EOT
+Usage:
+
+  rbfind [options] path... 'block'
+
+EOT
+  OPTIONS.each { |(long,short),arg,desc|
+    puts "    %-12s %2s  %-5s  %s" % [long,short,arg.to_s.upcase,desc]
+  }
+  puts <<'EOT'
+
+  "--" stops option processing.
+
+  The last argument is a block that will be executed on every found
+  file object. It may be omitted; then "puts path" is assumed or "cpath"
+  in case the output is a terminal.
+
+  Default sort order is alphabetical.
+
+EOT
+end
+
+def usage_examples
+  usage
+  puts <<'EOT'
+Examples:
+  $ rbfind -pe '.rb c h'
+  $ rbfind -p 'age < 5.m'
+  $ rbfind -g 'define\s*ALLOC_N'
+  $ rbfind /usr/include -e .h -g EACCES
+  $ rbfind -Cp
+  $ rbfind -d -m3 -- /mnt/data
+  $ rbfind 'filesize > 10.MiB and colsep size.to_hib, path'
+  $ rbfind myproject -e rb -l '~/require/ and puts $_'
+
+  $ rbfind -S "name =~ /^\.*/ ; $'.downcase"
+  $ rbfind -B '$s=0' -E 'puts $s.to_h' 'filesize {|s|$s+=s}'
+  $ rbfind 'puts path if ext == ".rb"'
+  $ rbfind -p 'ext == ".rb"'
+  $ rbfind /usr/include -p -D '\.h$' -l '~/EACCES/'
+  $ rbfind /usr/include -pD 'pg|pq|postgres' dir
+  $ rbfind 'no_svn ; puts path'
+  $ rbfind 'prune if name == ".svn" ; puts path'
+  $ rbfind -p 'prune if name == ".svn"'
+  $ rbfind myproject 'name[/\.rb$/] and lines { |l,i| l=~/require/ and puts l }'
+  # rbfind /etc 'lines { |l,| l["192.168."] and (puts path ; break) }'
+  $ rbfind /etc 'readable? or raise "Access denied: #{path}" ;
+  >              lines { |l,| l["192.168."] and (puts path ; break) }'
+
+  $ rbfind 'col_sep stype+modes, size[10], path'
+  $ rbfind 'tab_sep stype+modes, size[10], path'
+  $ rbfind 'spc_sep stype+modes, size.to_h, user, group, path'
+  $ rbfind 'spacesep stype+modes, size.to_h, user, group, path'
+  $ rbfind 'spacesep modes, user|8, group|8, size[8], cpath + carrow.to_s'
+
+  See the RbFind class documentation or the "rbfind.rb" source file for more
+  sophisticated examples and for a full list of file examination methods.
+
+  Valid units are 1.s, 1.m, 1.h, 1.d, 1.w for time values and
+  1.kB == 1000, 1.kiB == 1024, 1.MB, 1.MiB for file sizes.
+EOT
+end
+
+require "rbfind"
+require "humansiz"
+
+require "English"
+require "fileutils"
+include FileUtils
+
+require 'getoptlong'
+
+
+class Fixnum
+  # convenient formatting, right justification
+  def [] width
+    "%#{width.to_i}d" % self
+  end
+end
+
+class String
+  # convenient formatting, left justification
+  def | width
+    ljust width
+  end
+end
+
+class NilClass
+  # This makes it very easy to compare the return value of `filesize'.
+  def <  oth ; false ; end
+  def <= oth ; false ; end
+  def >  oth ; false ; end
+  def >= oth ; false ; end
+  def between? oth ; false ; end
+end
+
+class RbFind
+  # Alias the question marks away from all method names because
+  # they're a nuisance on the bash command line.
+
+  alias hidden       hidden?
+  alias visible      visible?
+  alias broken_link  broken_link?
+  alias dir          dir?
+  alias binary       binary?
+  alias bin          bin?
+  alias vimswap      vimswap?
+
+  def blockdev        ; blockdev?         ; end
+  def chardev         ; chardev?          ; end
+  def directory       ; directory?        ; end
+  def executable      ; executable?       ; end
+  def executable_real ; executable_real?  ; end
+  def file            ; file?             ; end
+  def grpowned        ; grpowned?         ; end
+  def owned           ; owned?            ; end
+  def pipe            ; pipe?             ; end
+  def readable        ; readable?         ; end
+  def readable_real   ; readable_real?    ; end
+  def setgid          ; setgid?           ; end
+  def setuid          ; setuid?           ; end
+  def socket          ; socket?           ; end
+  def sticky          ; sticky?           ; end
+  def symlink         ; symlink?          ; end
+  def writable        ; writable?         ; end
+  def writable_real   ; writable_real?    ; end
+  def zero            ; zero?             ; end
+end
+
+
+opts = GetoptLong.new *OPTIONS.map { |(long,short),arg,|
+  [long,short,(arg ? GetoptLong::REQUIRED_ARGUMENT : GetoptLong::NO_ARGUMENT)]
+}
+opts.ordering = GetoptLong::PERMUTE
+opts.quiet = true
+
+
+@params = {}
+@lines = []
+
+begin
+  opts.each do |opt,arg|
+    case opt
+      when '--help'      then usage          ; exit
+      when '--version'   then puts PROGRAM   ; exit
+      when '--examples'  then usage_examples ; exit
+      when '--verbose'   then @verbose = true
+      when '--bw'        then @color = false
+      when '--colored'   then @color = true
+      when '--depth'     then @params[ :depth] = true
+      when '--maxdepth'  then @params[ :max_depth] = arg
+      when '--sort'      then @params[ :sort] = arg
+      when '--sort-by'   then @params[ :sort] = instance_eval "proc { |name| #{arg} }"
+      when '--require'   then require arg
+      when '--puts-path' then @puts_path = true
+      when '--lines'     then @lines.push :plain
+      when '--reallines' then @lines.push :real
+      when '--grep'      then @lines.push :grep
+      when '--igrep'     then @lines.push :grep, :icase
+      when '--no-vcs'    then @vcs = true
+      when '--no-swap'   then @vim = true
+      when '--skip'      then @skip = arg
+      when '--demand'    then @demand = arg
+      when '--ext'       then @ext = arg
+      when '--begin'     then @blkbegin = arg
+      when '--end'       then @blkend   = arg
+    end
+  end
+rescue GetoptLong::InvalidOption
+  $stderr.puts $!
+  $stderr.puts
+  usage
+  exit 1
+end
+
+def error_handle
+  if @verbose then
+    yield
+  else
+    begin
+      yield
+    rescue
+      $!.message =~ %r/:\s+/
+      $stderr.puts "Error: #{$' || $!}"
+      exit 1
+    rescue NoMemoryError, ScriptError, SignalException
+      $stderr.puts $!.inspect
+      exit 2
+    end
+  end
+end
+
+
+@color.nil? and @color = !File::ALT_SEPARATOR&&$stdout.tty?
+opath = @color ? "cpath" : "path"
+
+if @lines.any? then
+  arg = $*.pop
+  if @lines.include? :grep then
+    RE = Regexp.new arg.to_s, (@lines.include? :icase)&&Regexp::IGNORECASE
+    block = "~RE and colsep #{opath}, $., $_"
+  else
+    @puts_path and block = "( #{arg} ) and colsep #{opath}, $., $_"
+  end
+  @lines.find { |l| l != :plain } and block.insert 0, "break if ~/\0/o ; "
+  block = "lines { |$_,$.| #{block} }"
+
+else
+  if $*.last and not File.exists? $*.last then
+    block = $*.pop.dup
+  else
+    block = "true"
+    @puts_path = true
+  end
+  @puts_path and block = "( #{block} ) and puts #{opath}"
+
+end
+
+if @skip then
+  RE_SKIP = Regexp.new @skip, File::ALT_SEPARATOR&&Regexp::IGNORECASE
+  block.insert 0, "next if name =~ RE_SKIP ; "
+end
+
+if @demand then
+  RE_DEMAND = Regexp.new @demand, File::ALT_SEPARATOR&&Regexp::IGNORECASE
+  block.insert 0, "next unless name =~ RE_DEMAND ; "
+end
+
+if @ext then
+  RE_EXT = Regexp.new '\A\.(' +
+    @ext.split.map { |e| e[ /[^.]*\z/] }.join('|') + ')\z',
+    File::ALT_SEPARATOR&&Regexp::IGNORECASE
+  block.insert 0, "ext =~ RE_EXT or next ; "
+end
+
+@vcs and block.insert 0, "no_vcs ; "
+@vim and block.insert 0, "vimswap? and next ; "
+
+eval "BEGIN { #@blkbegin }" if @blkbegin
+eval "END   { #@blkend   }" if @blkend
+
+args = $*.dup
+args.push $stdin.read.map { |l| l.chomp } unless args.any? or $stdin.tty?
+@params[ :dir_error] = @params[ :file_error] = proc { |e| $stderr.puts e }
+error_handle do
+  RbFind.open args, @params do |f| f.instance_eval block end
+end
+
