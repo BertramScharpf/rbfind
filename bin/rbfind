@@ -4,10 +4,8 @@
 #  rbfind  --  Ruby Find with many features
 #
 
-# $Id: rbfind 239 2008-08-21 10:31:05Z bsch $
-
 PROGRAM = <<EOT
-rbfind 1.2.1  --  A find tool using Ruby
+rbfind 1.2.2  --  A find tool using Ruby
 
   Author: Bertram Scharpf <software@bertram-scharpf.de>
   License: BSD
@@ -27,7 +25,8 @@ OPTIONS = [
   [ %w(--sort      -s), :str, "=reverse/desc/-1,unsorted; default is sorted"],
   [ %w(--sort-by   -S), :str, "sort expression ('name' is name)"],
   [ %w(--require   -r), :rb,  "require library"],
-  [ %w(--puts-path -p), nil,  "do 'puts path' on true block"],
+  [ %w(--fileutils -U), nil,  "include FileUtils module"],
+  [ %w(--puts-path -p), nil,  "do 'puts path/cpath' on true block"],
   [ %w(--lines     -l), nil,  "surround block by 'lines { |$_,$.| ... }'"],
   [ %w(--reallines -L), nil,  "same as -l but stop at any null character"],
   [ %w(--grep      -g), nil,  "grep files (implies -pL)"],
@@ -37,6 +36,7 @@ OPTIONS = [
   [ %w(--skip      -k), :lst, "filenames to skip"],
   [ %w(--demand    -D), :lst, "skip all filenames but these"],
   [ %w(--ext       -e), :lst, "skip all filename extensions but these"],
+  [ %w(--visible   -I), nil,  "skip hidden files (starting with .dot)"],
   [ %w(--begin     -B), :blk, "BEGIN block"],
   [ %w(--end       -E), :blk, "END block"],
 ]
@@ -97,6 +97,9 @@ Examples:
   $ rbfind 'spacesep stype+modes, size.to_h, user, group, path'
   $ rbfind 'spacesep modes, user|8, group|8, size[8], cpath + carrow.to_s'
 
+  $ rbfind 'rename name.downcase'
+  $ rbfind 'ext == ".tgz" and rename without_ext+".tar.gz"'
+
   See the RbFind class documentation or the "rbfind.rb" source file for more
   sophisticated examples and for a full list of file examination methods.
 
@@ -109,8 +112,6 @@ require "rbfind"
 require "humansiz"
 
 require "English"
-require "fileutils"
-include FileUtils
 
 require 'getoptlong'
 
@@ -197,6 +198,7 @@ begin
       when '--sort'      then @params[ :sort] = arg
       when '--sort-by'   then @params[ :sort] = instance_eval "proc { |name| #{arg} }"
       when '--require'   then require arg
+      when '--fileutils' then require "fileutils" ; include FileUtils
       when '--puts-path' then @puts_path = true
       when '--lines'     then @lines.push :plain
       when '--reallines' then @lines.push :real
@@ -207,6 +209,7 @@ begin
       when '--skip'      then @skip = arg
       when '--demand'    then @demand = arg
       when '--ext'       then @ext = arg
+      when '--visible'   then @visible = true
       when '--begin'     then @blkbegin = arg
       when '--end'       then @blkend   = arg
     end
@@ -277,6 +280,8 @@ if @ext then
     File::ALT_SEPARATOR&&Regexp::IGNORECASE
   block.insert 0, "ext =~ RE_EXT or next ; "
 end
+
+@visible and block.insert 0, "visible? or next ; "
 
 @vcs and block.insert 0, "no_vcs ; "
 @vim and block.insert 0, "vimswap? and next ; "

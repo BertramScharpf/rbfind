@@ -2,8 +2,6 @@
 #  rbfind.gemspec  --  RbFind Gem specification
 #
 
-# $Id: rbfind.gemspec 314 2009-03-13 17:42:33Z bsch $
-
 require "rubygems"
 
 

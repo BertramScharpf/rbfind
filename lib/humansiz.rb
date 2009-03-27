@@ -3,8 +3,6 @@
 #
 # Numeric class extensions for human readable sizes.
 
-# $Id: humansiz.rb 311 2009-03-05 22:49:35Z bsch $
-
 # Human readable sizes and times.
 #
 # Examples:

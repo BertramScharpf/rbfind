@@ -2,9 +2,6 @@
 #  Rakefile  --  build RbFind project
 #
 
-# $Id: Rakefile 314 2009-03-13 17:42:33Z bsch $
-
-
 task "README" do |t|
   File.open t.name, "w" do |readme|
     readme.puts `ruby -I lib bin/rbfind --version`

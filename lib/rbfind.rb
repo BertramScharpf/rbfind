@@ -5,8 +5,6 @@
 # * See the RbFind for the class reference.
 #
 
-# $Id: rbfind.rb 311 2009-03-05 22:49:35Z bsch $
-
 # Author: Bertram Scharpf <software@bertram-scharpf.de>
 # License: BSD
 
@@ -28,8 +26,11 @@
 #     f.name          # file name (*)
 #     f.path          # file path relative to working directory (*)
 #     f.fullpath      # full file path (*)
+#     f.dirname       # dirname of path
+#     f.ext           # file name extension
+#     f.without_ext   # file name without extension
 #     f.depth         # step depth
-#     f.hidden?       # filename starting with "."
+#     f.hidden?       # filename starting with "." (No Windows version, yet.)
 #     f.visible?      # not hidden?
 #     f.stat          # file status information (File::Stat object)
 #     f.mode          # access mode (like 0755, 0644)
@@ -99,6 +100,8 @@
 #     f.spacesep path, ... #
 #     f.space_sep          #
 #     f.csv sep, path, ... # separate by user-defined separator
+#
+#     f.rename newname   # rename, but leave it in the same directory
 #
 #   Color support:
 #     f.cname       # colorized name
@@ -214,7 +217,7 @@ class RbFind
     end
   end
 
-  attr_reader :count
+  attr_reader :count, :wd, :start
 
   def initialize path, params = nil, &block
     @levels = []
@@ -252,11 +255,16 @@ class RbFind
   def path     ; @path        ; end
   def fullpath ; @fullpath    ; end
 
-  def ext ; File.extname @path ; end
+  def dirname
+    @dirname ||= File.dirname @path
+  end
+
+  def ext         ; File.extname name ; end
+  def without_ext ; name[ /^(.+?)(?:\.[^.]+)?$/, 1 ].to_s ; end
 
   def depth ; @levels.size ; end
 
-  def hidden?  ; name[ 0] == ?. ; end
+  def hidden?  ; name =~ /^\./  ; end
   def visible? ; not hidden?    ; end
 
   def stat ; File.lstat @path ; end
@@ -360,17 +368,9 @@ class RbFind
   end
 
 
-  def cname
-    color name
-  end
-
-  def cpath
-    color path
-  end
-
-  def cfullpath
-    color fullpath
-  end
+  def cname     ; color name     ; end
+  def cpath     ; color path     ; end
+  def cfullpath ; color fullpath ; end
 
   def color arg
     col_stat arg, stat
@@ -507,6 +507,17 @@ class RbFind
   end
 
 
+  def rename newname
+    fp = @fullpath
+    nb = File.basename newname
+    newname == nb or raise RuntimeError,
+          "#{self.class}: rename to `#{newname}' may not be a path."
+    @levels.pop
+    @levels.push newname
+    build_path
+    File.rename fp, @fullpath
+  end
+
   private
 
   def sort_parser st
@@ -528,6 +539,7 @@ class RbFind
   def build_path
     @path = File.join @levels
     @fullpath = File.expand_path @path, @wd
+    @dirname = nil
   end
 
   def walk
