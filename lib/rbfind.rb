@@ -44,6 +44,7 @@
 #     f.age_d         # age in days
 #     f.age_days      #   dto. (alias)
 #     f.user          # owner
+#     f.owner         #   dto. (alias)
 #     f.group         # group owner
 #     f.readlink      # symlink pointer or nil (*)
 #     f.broken_link?  # what you expect
@@ -425,6 +426,7 @@ class RbFind
   def user
     (etc.getpwuid stat.uid).name
   end
+  alias owner user
 
   def group
     (etc.getgrgid stat.gid).name
