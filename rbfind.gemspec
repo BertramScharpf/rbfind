@@ -16,7 +16,7 @@ class Gem::Specification
     nil
   end
 
-  alias  files_orig files
+  alias files_orig files
   def files
     @built ||= system "rake"
     @built or raise "build (rake) failed."
