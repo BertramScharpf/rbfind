@@ -424,12 +424,14 @@ class RbFind
 
 
   def user
-    (etc.getpwuid stat.uid).name
+    u = stat.uid
+    (etc.getpwuid u).name rescue u.to_s
   end
   alias owner user
 
   def group
-    (etc.getgrgid stat.gid).name
+    g = stat.gid
+    (etc.getgrgid g).name rescue g.to_s
   end
 
 
