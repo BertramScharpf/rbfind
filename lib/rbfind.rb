@@ -540,9 +540,17 @@ class RbFind
     end
   end
 
+  RE_ABOLUTE = /\A[#{File::SEPARATOR}#{File::ALT_SEPARATOR}]/
+  # RE_ABOLUTE = /\A([A-Z]:)?[#{File::SEPARATOR}#{File::ALT_SEPARATOR}]/
+
   def build_path
     @path = File.join @levels
-    @fullpath = File.join @wd, @path
+    # File.expand_path will expand ~ which is not desired here.
+    @fullpath = if @path =~ RE_ABOLUTE then
+      @path
+    else
+      File.join @wd, @path
+    end
     @dirname = nil
   end
 
