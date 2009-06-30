@@ -542,7 +542,7 @@ class RbFind
 
   def build_path
     @path = File.join @levels
-    @fullpath = File.expand_path @path, @wd
+    @fullpath = File.join @wd, @path
     @dirname = nil
   end
 
