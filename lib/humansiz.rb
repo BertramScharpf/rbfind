@@ -50,11 +50,11 @@ class Numeric                   # sizes in bytes
   PREFIXES = " kMGTPEZY".scan /./   # :nodoc:
 
   # :call-seq:
-  #    num.to_h  => str
+  #    num.to_h  #=> str
   #
   # To human readable with decimal prefixes.
   #
-  #   4096.to_h   # => "  4.1kB"
+  #   4096.to_h   #=> "  4.1kB"
   #
   def to_h
     n = 0
@@ -65,11 +65,11 @@ class Numeric                   # sizes in bytes
   end
 
   # :call-seq:
-  #    num.to_hib  => str
+  #    num.to_hib  #=> str
   #
   # To human readable with binary prefixes.
   #
-  #   4096.to_hib # => "   4.0kiB"
+  #   4096.to_hib   #=> "   4.0kiB"
   #
   def to_hib
     n = 0
