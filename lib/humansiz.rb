@@ -3,26 +3,31 @@
 #
 # Numeric class extensions for human readable sizes.
 
-# Human readable sizes and times.
-#
-# Examples:
-#
-#   4096.to_h   # => "  4.1kB"
-#   4096.to_hib # => "   4.0kiB"
-#   1.MB        # => 1000000
-#   1.MiB       # => 1048576
-#   1.5.kiB     # => 1536.0
-#   
-#   1.h   # => 3600
-#   1.w   # => 604800
-#   
+=begin rdoc
+
+Human readable sizes and times.
+
+Examples:
+
+  4096.to_h   # => "  4.1kB"
+  4096.to_hib # => "   4.0kiB"
+  1.MB        # => 1000000
+  1.MiB       # => 1048576
+  1.5.kiB     # => 1536.0
+
+  1.h   # => 3600
+  1.w   # => 604800
+
+=end
 
 class Numeric                   # sizes in bytes
 
+  # :stopdoc:
   K = 1000
   M = K * K
   G = K * M
   T = K * G
+  # :startdoc:
 
   def kB ; self * K ; end
   def MB ; self * M ; end
@@ -30,19 +35,28 @@ class Numeric                   # sizes in bytes
   def TB ; self * T ; end
 
 
+  # :stopdoc:
   Kb = 1024
   Mb = Kb * Kb
   Gb = Kb * Mb
   Tb = Kb * Gb
+  # :startdoc:
 
   def kiB ; self * Kb ; end
   def MiB ; self * Mb ; end
   def GiB ; self * Gb ; end
   def TiB ; self * Tb ; end
 
-  PREFIXES = " kMGTPEZY".scan /./
+  PREFIXES = " kMGTPEZY".scan /./   # :nodoc:
 
-  # to human readable with decimal prefixes
+  # :call-seq:
+  #
+  #    num.to_h  => str
+  #
+  # To human readable with decimal prefixes.
+  #
+  #   4096.to_h   # => "  4.1kB"
+  #
   def to_h
     n = 0
     s = to_f
@@ -51,7 +65,14 @@ class Numeric                   # sizes in bytes
     (format % s) + (PREFIXES[ n]||"?") + "B"
   end
 
-  # to human readable with binary prefixes
+  # :call-seq:
+  #
+  #    num.to_hib  => str
+  #
+  # To human readable with binary prefixes.
+  #
+  #   4096.to_hib # => "   4.0kiB"
+  #
   def to_hib
     n = 0
     s = to_f
