@@ -159,10 +159,12 @@ Derivated from stat:
 
 = Examples
 
-  Find them all:
+Find them all:
+
     RbFind.open do |f| puts f.path end
 
-  Omit version control:
+Omit version control:
+
     RbFind.open "myproject" do |f|
       f.prune if f.name == ".svn"
       puts f.path
@@ -173,27 +175,32 @@ Derivated from stat:
       puts f.path
     end
 
-  Mention directory contents before directory itself:
+Mention directory contents before directory itself:
+
     RbFind.open "myproject", :depth => true do |f|
       puts f.path
     end
 
-  Limit search depth:
+Limit search depth:
+
     RbFind.open :max_depth => 2 do |f|
       puts f.path
     end
 
-  Unsorted (alphabetical sort is default):
+Unsorted (alphabetical sort is default):
+
     RbFind.open :sort => false do |f|
       puts f.path
     end
 
-  Reverse sort:
+Reverse sort:
+
     RbFind.open :sort => -1 do |f|
       puts f.path
     end
 
-  Sort without case sensitivity and preceding dot:
+Sort without case sensitivity and preceding dot:
+
     s = proc { |x| x =~ /^\.?/ ; $'.downcase }
     RbFind.open :sort => s do |f|
       puts f.path
