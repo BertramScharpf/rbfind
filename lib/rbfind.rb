@@ -294,7 +294,7 @@ class RbFind
   end
 
   # :call-seq:
-  #    broken_link?()   #=> true or false
+  #    broken_link?()   -> true or false
   #
   def broken_link?
     not (File.stat @path rescue nil) if stat.symlink?
@@ -341,7 +341,7 @@ class RbFind
   def dir? ; stat.directory? ; end
 
   # :call-seq:
-  #    stype()   #=> str
+  #    stype()   -> str
   #
   def stype
     m = stat.mode >> 12 rescue nil
@@ -360,7 +360,7 @@ class RbFind
   end
 
   # :call-seq:
-  #    modes()   #=> str
+  #    modes()   -> str
   #
   def modes
     m = stat.mode
@@ -439,7 +439,7 @@ class RbFind
 
 
   # :call-seq:
-  #    suffix()   #=> str
+  #    suffix()   -> str
   #
   def suffix
     m = stat.mode >> 12 rescue nil
@@ -458,7 +458,7 @@ class RbFind
 
 
   # :call-seq:
-  #    user()   #=> str
+  #    user()   -> str
   #
   # Return user name or uid as string if unavailable.
   #
@@ -469,7 +469,7 @@ class RbFind
   alias owner user
 
   # :call-seq:
-  #    group()   #=> str
+  #    group()   -> str
   #
   # Return group name or gid as string if unavailable.
   #
@@ -480,7 +480,7 @@ class RbFind
 
 
   # :call-seq:
-  #    open() { |h| ... }    #=> obj
+  #    open() { |h| ... }    -> obj
   #
   # Open the file for reading. When the object is not a regular file,
   # nothing will be done.
@@ -493,7 +493,7 @@ class RbFind
   end
 
   # :call-seq:
-  #    read( n)    #=> str or nil
+  #    read( n)    -> str or nil
   #
   # Read the first <code>n</code> bytes or return <code>nil</code>
   # for others that regular files.
@@ -503,7 +503,7 @@ class RbFind
   end
 
   # :call-seq:
-  #    lines { |l,i| ... }    #=> nil
+  #    lines { |l,i| ... }    -> nil
   #
   # Yield line by line together with the line number <code>i</code>.
   #
@@ -520,7 +520,7 @@ class RbFind
   BLOCK_SIZE = 512   # :nodoc:
 
   # :call-seq:
-  #    binary?( n = 1)   #=> true or false
+  #    binary?( n = 1)   -> true or false
   #
   # Test whether the first <code>n</code> blocks contain null characters.
   #
@@ -546,14 +546,14 @@ class RbFind
   # :startdoc:
 
   # :call-seq:
-  #    prune()   #=> (does not return)
+  #    prune()   -> (does not return)
   #
   # Abandon the current object (directory) and ignore all subdirectories.
   #
   def prune ; raise Prune ; end
 
   # :call-seq:
-  #    novcs()   #=> nil
+  #    novcs()   -> nil
   #
   # Perform <code>prune</code> if the current object is a CVS, Subversion or
   # Git directory.
@@ -564,7 +564,7 @@ class RbFind
   alias no_vcs novcs
 
   # :call-seq:
-  #    vimswap?   #=> true or false
+  #    vimswap?   -> true or false
   #
   # Check whether the current object is a Vim swapfile.
   #
