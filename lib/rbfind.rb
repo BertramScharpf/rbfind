@@ -8,188 +8,198 @@
 # Author: Bertram Scharpf <software@bertram-scharpf.de>
 # License: BSD
 
-# Description:
-#
-#   Usage:
-#     RbFind.open                do |f| puts f.path end
-#     RbFind.open "dir"          do |f| puts f.path end
-#     RbFind.open "dir1", "dir2" do |f| puts f.path end
-#     RbFind.open %w(dir1 dir2)  do |f| puts f.path end
-#     RbFind.open "dir", :max_depth => 3 do |f| puts f.path end
-#
-#     # more terse
-#     RbFind.run       do puts path end
-#     RbFind.run "dir" do puts path end
-#
-#
-#   File properties:
-#     f.name          # file name (*)
-#     f.path          # file path relative to working directory (*)
-#     f.fullpath      # full file path (*)
-#     f.dirname       # dirname of path
-#     f.ext           # file name extension
-#     f.without_ext   # file name without extension
-#     f.depth         # step depth
-#     f.hidden?       # filename starting with "." (No Windows version, yet.)
-#     f.visible?      # not hidden?
-#     f.stat          # file status information (File::Stat object)
-#     f.mode          # access mode (like 0755, 0644)
-#     f.age           # age in seconds since walk started
-#     f.age_s         #   dto. (alias)
-#     f.age_secs      #   dto. (alias)
-#     f.age_m         # age in minutes
-#     f.age_mins      #   dto. (alias)
-#     f.age_h         # age in hours
-#     f.age_hours     #   dto. (alias)
-#     f.age_d         # age in days
-#     f.age_days      #   dto. (alias)
-#     f.user          # owner
-#     f.owner         #   dto. (alias)
-#     f.group         # group owner
-#     f.readlink      # symlink pointer or nil (*)
-#     f.broken_link?  # what you expect
-#     f.arrow         # ls-style "-> symlink" suffix (*)
-#
-#                     # (*) = colored version available (see below)
-#
-#     f.open  { |o| ... }    # open file
-#     f.read n               # read first n bytes
-#     f.lines { |l,i| ... }  # open file and yield each |line,lineno|
-#     f.grep re              # lines with `l =~ re and colsep path, i, l'
-#     f.binary? n = 1   # test whether first n blocks contain null characters
-#     f.bin?            # alias for binary?
-#
-#     f.vimswap?      # it is a Vim swapfile
-#
-#   Further will be redirected to the stat object (selective):
-#     f.directory?
-#     f.executable?
-#     f.file?
-#     f.pipe?
-#     f.socket?
-#     f.symlink?
-#
-#     f.readable?
-#     f.writable?
-#     f.size
-#     f.zero?
-#
-#     f.uid
-#     f.gid
-#     f.owned?
-#     f.grpowned?
-#
-#     f.dir?         # alias for f.directory?
-#
-#   Derivated from stat:
-#     f.stype        # one-letter (short) version of ftype
-#     f.modes        # rwxr-xr-x style modes
-#
-#     f.filesize                    # returns size for files, else nil
-#     f.filesize { |s| s > 1024 }   # returns block result for files
-#
-#   Actions:
-#     f.prune   # do not descend directory; abort current entry
-#     f.novcs   # omit .svn, CVS and .git directories
-#
-#     f.colsep path, ...   # output parameters in a line separated by colons
-#     f.col_sep            #   dto. (alias)
-#     f.tabsep path, ...   # separate by tabs
-#     f.tab_sep            #
-#     f.spcsep path, ...   # separate by spaces
-#     f.spc_sep            #
-#     f.spacesep path, ... #
-#     f.space_sep          #
-#     f.csv sep, path, ... # separate by user-defined separator
-#
-#     f.rename newname   # rename, but leave it in the same directory
-#
-#   Color support:
-#     f.cname       # colorized name
-#     f.cpath       # colorized path
-#     f.cfullpath   # colorized fullpath
-#     f.creadlink   # colored symlink pointer
-#     f.carrow      # colored "-> symlink" suffix
-#
-#     f.color arg   # colorize argument
-#     f.colour arg  # alias
-#
-#     RbFind.colors str      # define colors
-#     RbFind.colours str     # alias
-#
-#     Default color setup is "xxHbexfxcxdxbxegedabagacadAx".
-#     In case you did not call RbFind.colors, the environment variables
-#     RBFIND_COLORS and RBFIND_COLOURS are looked up. If neither ist given
-#     but LSCOLORS is set, the fields 2-13 default to that.
-#
-#     The letters mean:
-#       a = black, b = red, c = green, d = brown, e = blue,
-#       f = magenta, g = cyan, h = light grey
-#       upper case = bold (resp. dark grey, yellow)
-#
-#       first character = foreground, second character = background
-#
-#     The character pairs map the following types:
-#        0  regular file
-#        1  nonexistent (broken link)
-#        2  directory
-#        3  symbolic link
-#        4  socket
-#        5  pipe
-#        6  executable
-#        7  block special
-#        8  character special
-#        9  executable with setuid bit set
-#       10  executable with setgid bit set
-#       11  directory writable to others, with sticky bit
-#       12  directory writable to others, without sticky bit
-#       13  whiteout
-#       14  unknown
-#
-#     f.suffix      # ls-like suffixes |@=/%* for pipe, ..., executable
-#
-# Examples:
-#
-#   Find them all:
-#     RbFind.open do |f| puts f.path end
-#
-#   Omit version control:
-#     RbFind.open "myproject" do |f|
-#       f.prune if f.name == ".svn"
-#       puts f.path
-#     end
-#     # or even
-#     RbFind.open "myproject" do |f|
-#       f.nosvn
-#       puts f.path
-#     end
-#
-#   Mention directory contents before directory itself:
-#     RbFind.open "myproject", :depth => true do |f|
-#       puts f.path
-#     end
-#
-#   Limit search depth:
-#     RbFind.open :max_depth => 2 do |f|
-#       puts f.path
-#     end
-#
-#   Unsorted (alphabetical sort is default):
-#     RbFind.open :sort => false do |f|
-#       puts f.path
-#     end
-#
-#   Reverse sort:
-#     RbFind.open :sort => -1 do |f|
-#       puts f.path
-#     end
-#
-#   Sort without case sensitivity and preceding dot:
-#     s = proc { |x| x =~ /^\.?/ ; $'.downcase }
-#     RbFind.open :sort => s do |f|
-#       puts f.path
-#     end
-#
+=begin rdoc
+
+= Usage
+
+  RbFind.open                do |f| puts f.path end
+  RbFind.open "dir"          do |f| puts f.path end
+  RbFind.open "dir1", "dir2" do |f| puts f.path end
+  RbFind.open %w(dir1 dir2)  do |f| puts f.path end
+  RbFind.open "dir", :max_depth => 3 do |f| puts f.path end
+
+  # more terse
+  RbFind.run       do puts path end
+  RbFind.run "dir" do puts path end
+
+
+= File properties
+
+  f.name          # file name (*)
+  f.path          # file path relative to working directory (*)
+  f.fullpath      # full file path (*)
+  f.dirname       # dirname of path
+  f.ext           # file name extension
+  f.without_ext   # file name without extension
+  f.depth         # step depth
+  f.hidden?       # filename starting with "." (No Windows version, yet.)
+  f.visible?      # not hidden?
+  f.stat          # file status information (File::Stat object)
+  f.mode          # access mode (like 0755, 0644)
+  f.age           # age in seconds since walk started
+  f.age_s         #   dto. (alias)
+  f.age_secs      #   dto. (alias)
+  f.age_m         # age in minutes
+  f.age_mins      #   dto. (alias)
+  f.age_h         # age in hours
+  f.age_hours     #   dto. (alias)
+  f.age_d         # age in days
+  f.age_days      #   dto. (alias)
+  f.user          # owner
+  f.owner         #   dto. (alias)
+  f.group         # group owner
+  f.readlink      # symlink pointer or nil (*)
+  f.broken_link?  # what you expect
+  f.arrow         # ls-style "-> symlink" suffix (*)
+
+                  # (*) = colored version available (see below)
+
+  f.open  { |o| ... }    # open file
+  f.read n               # read first n bytes
+  f.lines { |l,i| ... }  # open file and yield each |line,lineno|
+  f.grep re              # lines with `l =~ re and colsep path, i, l'
+  f.binary? n = 1   # test whether first n blocks contain null characters
+  f.bin?            # alias for binary?
+
+  f.vimswap?      # it is a Vim swapfile
+
+Further will be redirected to the stat object (selective):
+
+    f.directory?
+    f.executable?
+    f.file?
+    f.pipe?
+    f.socket?
+    f.symlink?
+
+    f.readable?
+    f.writable?
+    f.size
+    f.zero?
+
+    f.uid
+    f.gid
+    f.owned?
+    f.grpowned?
+
+    f.dir?         # alias for f.directory?
+
+Derivated from stat:
+
+    f.stype        # one-letter (short) version of ftype
+    f.modes        # rwxr-xr-x style modes
+
+    f.filesize                    # returns size for files, else nil
+    f.filesize { |s| s > 1024 }   # returns block result for files
+
+
+= Actions
+
+    f.prune   # do not descend directory; abort current entry
+    f.novcs   # omit .svn, CVS and .git directories
+
+    f.colsep path, ...   # output parameters in a line separated by colons
+    f.col_sep            #   dto. (alias)
+    f.tabsep path, ...   # separate by tabs
+    f.tab_sep            #
+    f.spcsep path, ...   # separate by spaces
+    f.spc_sep            #
+    f.spacesep path, ... #
+    f.space_sep          #
+    f.csv sep, path, ... # separate by user-defined separator
+
+    f.rename newname   # rename, but leave it in the same directory
+
+
+= Color support
+
+    f.cname       # colorized name
+    f.cpath       # colorized path
+    f.cfullpath   # colorized fullpath
+    f.creadlink   # colored symlink pointer
+    f.carrow      # colored "-> symlink" suffix
+
+    f.color arg   # colorize argument
+    f.colour arg  # alias
+
+    RbFind.colors str      # define colors
+    RbFind.colours str     # alias
+
+    Default color setup is "xxHbexfxcxdxbxegedabagacadAx".
+    In case you did not call RbFind.colors, the environment variables
+    RBFIND_COLORS and RBFIND_COLOURS are looked up. If neither ist given
+    but LSCOLORS is set, the fields 2-13 default to that.
+
+    The letters mean:
+      a = black, b = red, c = green, d = brown, e = blue,
+      f = magenta, g = cyan, h = light grey
+      upper case = bold (resp. dark grey, yellow)
+
+      first character = foreground, second character = background
+
+    The character pairs map the following types:
+       0  regular file
+       1  nonexistent (broken link)
+       2  directory
+       3  symbolic link
+       4  socket
+       5  pipe
+       6  executable
+       7  block special
+       8  character special
+       9  executable with setuid bit set
+      10  executable with setgid bit set
+      11  directory writable to others, with sticky bit
+      12  directory writable to others, without sticky bit
+      13  whiteout
+      14  unknown
+
+    f.suffix      # ls-like suffixes |@=/%* for pipe, ..., executable
+
+
+= Examples
+
+  Find them all:
+    RbFind.open do |f| puts f.path end
+
+  Omit version control:
+    RbFind.open "myproject" do |f|
+      f.prune if f.name == ".svn"
+      puts f.path
+    end
+    # or even
+    RbFind.open "myproject" do |f|
+      f.nosvn
+      puts f.path
+    end
+
+  Mention directory contents before directory itself:
+    RbFind.open "myproject", :depth => true do |f|
+      puts f.path
+    end
+
+  Limit search depth:
+    RbFind.open :max_depth => 2 do |f|
+      puts f.path
+    end
+
+  Unsorted (alphabetical sort is default):
+    RbFind.open :sort => false do |f|
+      puts f.path
+    end
+
+  Reverse sort:
+    RbFind.open :sort => -1 do |f|
+      puts f.path
+    end
+
+  Sort without case sensitivity and preceding dot:
+    s = proc { |x| x =~ /^\.?/ ; $'.downcase }
+    RbFind.open :sort => s do |f|
+      puts f.path
+    end
+
+=end
 
 class RbFind
 
@@ -283,11 +293,14 @@ class RbFind
     end
   end
 
+  # :call-seq:
+  #    broken_link?()   #=> true or false
+  #
   def broken_link?
     not (File.stat @path rescue nil) if stat.symlink?
   end
 
-  ARROW = " -> "
+  ARROW = " -> "  # :nodoc:
 
   def arrow
     ARROW + (File.readlink @path) if stat.symlink?
@@ -302,17 +315,20 @@ class RbFind
   alias age_secs age
   alias age_s    age_secs
 
+  # :stopdoc:
   MINUTE = 60
+  HOUR   = 60*MINUTE
+  DAY    = 24*HOUR
+  # :startdoc:
+
   def age_mins  ; age / MINUTE ; end
   alias age_m    age_mins
-
-  HOUR   = 60*MINUTE
   def age_hours ; age / HOUR   ; end
   alias age_h    age_hours
-
-  DAY    = 24*HOUR
   def age_days  ; age / DAY    ; end
   alias age_d    age_days
+
+  private
 
   def method_missing sym, *args, &block
     stat.send sym, *args, &block
@@ -320,8 +336,13 @@ class RbFind
     raise NoMethodError, "Undefined method `#{sym}'."
   end
 
+  public
+
   def dir? ; stat.directory? ; end
 
+  # :call-seq:
+  #    stype()   #=> str
+  #
   def stype
     m = stat.mode >> 12 rescue nil
     case m
@@ -338,6 +359,9 @@ class RbFind
     end
   end
 
+  # :call-seq:
+  #    modes()   #=> str
+  #
   def modes
     m = stat.mode
     r = ""
@@ -360,6 +384,13 @@ class RbFind
     r
   end
 
+  # :call-seq:
+  #    filesize => nil or int
+  #    filesize { |size| ... } => obj
+  #
+  # Returns the files size. When the object is not a regular file,
+  # nil will be returned or the block will not be called.
+  #
   def filesize
     if block_given? then
       yield stat.size if file?
@@ -407,6 +438,9 @@ class RbFind
   end
 
 
+  # :call-seq:
+  #    suffix()   #=> str
+  #
   def suffix
     m = stat.mode >> 12 rescue nil
     case m
@@ -423,18 +457,34 @@ class RbFind
   end
 
 
+  # :call-seq:
+  #    user()   #=> str
+  #
+  # Return user name or uid as string if unavailable.
+  #
   def user
     u = stat.uid
     (etc.getpwuid u).name rescue u.to_s
   end
   alias owner user
 
+  # :call-seq:
+  #    group()   #=> str
+  #
+  # Return group name or gid as string if unavailable.
+  #
   def group
     g = stat.gid
     (etc.getgrgid g).name rescue g.to_s
   end
 
 
+  # :call-seq:
+  #    open() { |h| ... }    #=> obj
+  #
+  # Open the file for reading. When the object is not a regular file,
+  # nothing will be done.
+  #
   def open &block
     file? and File.open path, &block
   rescue Errno::EACCES
@@ -442,10 +492,21 @@ class RbFind
     @file_error.call $!
   end
 
+  # :call-seq:
+  #    read( n)    #=> str or nil
+  #
+  # Read the first <code>n</code> bytes or return <code>nil</code>
+  # for others that regular files.
+  #
   def read n
-    open { |o| o.read n }.to_s
+    open { |o| o.read n }
   end
 
+  # :call-seq:
+  #    lines { |l,i| ... }    #=> nil
+  #
+  # Yield line by line together with the line number <code>i</code>.
+  #
   def lines
     n = 0
     open { |file| file.each { |line| n += 1 ; line.chomp! ; yield line, n } }
@@ -456,6 +517,13 @@ class RbFind
     lines { |l,i| l =~ re and colsep path, i, l }
   end
 
+  BLOCK_SIZE = 512   # :nodoc:
+
+  # :call-seq:
+  #    binary?( n = 1)   #=> true or false
+  #
+  # Test whether the first <code>n</code> blocks contain null characters.
+  #
   def binary? n = 1
     open { |file|
       loop do
@@ -463,7 +531,7 @@ class RbFind
           break if n <= 0
           n -= 1
         end
-        b = file.read 512
+        b = file.read BLOCK_SIZE
         b or break
         return true if b[ "\0"]
       end
@@ -473,16 +541,35 @@ class RbFind
   alias bin? binary?
 
 
+  # :stopdoc:
   class Prune < Exception ; end
+  # :startdoc:
+
+  # :call-seq:
+  #    prune()   #=> (does not return)
+  #
+  # Abandon the current object (directory) and ignore all subdirectories.
+  #
   def prune ; raise Prune ; end
 
+  # :call-seq:
+  #    novcs()   #=> nil
+  #
+  # Perform <code>prune</code> if the current object is a CVS, Subversion or
+  # Git directory.
+  #
   def novcs
     prune if %w(CVS .svn .git).include? name
   end
   alias no_vcs novcs
 
+  # :call-seq:
+  #    vimswap?   #=> true or false
+  #
+  # Check whether the current object is a Vim swapfile.
+  #
   def vimswap?
-    if name =~ /\.sw[a-z]\z/i then
+    if name =~ /\A(\..+)?\.sw[a-z]\z/i then
       mark = read 5
       mark == "b0VIM"
     end
@@ -540,8 +627,11 @@ class RbFind
     end
   end
 
-  RE_ABOLUTE = /\A[#{File::SEPARATOR}#{File::ALT_SEPARATOR}]/
-  # RE_ABOLUTE = /\A([A-Z]:)?[#{File::SEPARATOR}#{File::ALT_SEPARATOR}]/
+  # :stopdoc:
+  RE_ABOLUTE = File::ALT_SEPARATOR ?
+    /\A([A-Z]:)?[#{File::SEPARATOR}#{File::ALT_SEPARATOR}]/i :
+    /\A#{File::SEPARATOR}/
+  # :startdoc:
 
   def build_path
     @path = File.join @levels
