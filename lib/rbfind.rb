@@ -169,9 +169,10 @@ Omit version control:
       f.prune if f.name == ".svn"
       puts f.path
     end
+
     # or even
     RbFind.open "myproject" do |f|
-      f.nosvn
+      f.novcs
       puts f.path
     end
 
