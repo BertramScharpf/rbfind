@@ -243,12 +243,12 @@ end
 opath = @color ? "cpath" : "path"
 
 if @lines.any? then
-  arg = $*.pop
+  block = $*.pop
   if @lines.include? :grep then
-    RE = Regexp.new arg.to_s, (@lines.include? :icase)&&Regexp::IGNORECASE
+    RE = Regexp.new block, (@lines.include? :icase)&&Regexp::IGNORECASE
     block = "~RE and colsep #{opath}, $., $_"
   else
-    @puts_path and block = "( #{arg} ) and colsep #{opath}, $., $_"
+    @puts_path and block = "( #{block} ) and colsep #{opath}, $., $_"
   end
   @lines.find { |l| l != :plain } and block.insert 0, "break if ~/\0/o ; "
   block = "lines { |line,num| $_, $. = line, num ; #{block} }"
