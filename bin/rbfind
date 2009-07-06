@@ -251,7 +251,7 @@ if @lines.any? then
     @puts_path and block = "( #{arg} ) and colsep #{opath}, $., $_"
   end
   @lines.find { |l| l != :plain } and block.insert 0, "break if ~/\0/o ; "
-  block = "lines { |$_,$.| #{block} }"
+  block = "lines { |line,num| $_, $. = line, num ; #{block} }"
 
 else
   if $*.last and not File.exists? $*.last then
