@@ -68,14 +68,20 @@ def usage_examples
   usage
   puts <<'EOT'
 Examples:
-  $ rbfind -pe '.rb c h'
-  $ rbfind -p 'age < 5.m'
-  $ rbfind -g 'define\s*ALLOC_N'
-  $ rbfind /usr/include -e .h -g EACCES
+  $ rbfind -p 'file and age < 5.m'
+  $ rbfind -p 'file and age > 1.d'
+  $ rbfind -p '(90.d .. 183.d) === age'
+
+  $ rbfind -Cg require
   $ rbfind -Cp
+  $ rbfind 'filesize < 100.kB and grep /require/'
+  $ rbfind -g 'define\s*ALLOC_N'
+  $ rbfind myproject -e rb -l '~/require/ and puts $_'
+
+  $ rbfind -pe '.rb c h'
+  $ rbfind /usr/include -e .h -g EACCES
   $ rbfind -d -m3 -- /mnt/data
   $ rbfind 'filesize > 10.MiB and colsep size.to_hib, path'
-  $ rbfind myproject -e rb -l '~/require/ and puts $_'
 
   $ rbfind -S "name =~ /^\.*/ ; $'.downcase"
   $ rbfind -B '$s=0' -E 'puts $s.to_h' 'filesize {|s|$s+=s}'
@@ -173,16 +179,32 @@ class RbFind
 end
 
 
-opts = GetoptLong.new *OPTIONS.map { |(long,short),arg,|
-  [long,short,(arg ? GetoptLong::REQUIRED_ARGUMENT : GetoptLong::NO_ARGUMENT)]
-}
-opts.ordering = GetoptLong::PERMUTE
-opts.quiet = true
+def error_handle
+  if @verbose then
+    yield
+  else
+    begin
+      yield
+    rescue
+      $!.message =~ %r/:\s+/
+      $stderr.puts "Error: #{$' || $!}"
+      exit 1
+    rescue NoMemoryError, ScriptError, SignalException
+      $stderr.puts $!.inspect
+      exit 2
+    end
+  end
+end
 
 
 @params = {}
 @lines = []
 
+opts = GetoptLong.new *OPTIONS.map { |(long,short),arg,|
+  [long,short,(arg ? GetoptLong::REQUIRED_ARGUMENT : GetoptLong::NO_ARGUMENT)]
+}
+opts.ordering = GetoptLong::PERMUTE
+opts.quiet = true
 begin
   opts.each do |opt,arg|
     case opt
@@ -213,6 +235,7 @@ begin
       when '--begin'     then @blkbegin = arg
       when '--end'       then @blkend   = arg
     end
+    @block ||= $*.shift.dup if @lines.any?
   end
 rescue GetoptLong::InvalidOption
   $stderr.puts $!
@@ -221,70 +244,51 @@ rescue GetoptLong::InvalidOption
   exit 1
 end
 
-def error_handle
-  if @verbose then
-    yield
-  else
-    begin
-      yield
-    rescue
-      $!.message =~ %r/:\s+/
-      $stderr.puts "Error: #{$' || $!}"
-      exit 1
-    rescue NoMemoryError, ScriptError, SignalException
-      $stderr.puts $!.inspect
-      exit 2
-    end
-  end
-end
-
-
 @color.nil? and @color = !File::ALT_SEPARATOR&&$stdout.tty?
 opath = @color ? "cpath" : "path"
 
 if @lines.any? then
-  block = $*.pop
   if @lines.include? :grep then
-    RE = Regexp.new block, (@lines.include? :icase)&&Regexp::IGNORECASE
-    block = "~RE and colsep #{opath}, $., $_"
+    RE = Regexp.new @block, (@lines.include? :icase)&&Regexp::IGNORECASE
+    @block = "~RE and colsep #{opath}, $., $_"
   else
-    @puts_path and block = "( #{block} ) and colsep #{opath}, $., $_"
+    @puts_path and @block = "( #@block ) and colsep #{opath}, $., $_"
   end
-  @lines.find { |l| l != :plain } and block.insert 0, "break if ~/\0/o ; "
-  block = "lines { |line,num| $_, $. = line, num ; #{block} }"
+  @lines.find { |l| l != :plain } and @block.insert 0, "break if ~/\0/o ; "
+  @block = "lines { |line,num| $_, $. = line, num ; #@block }"
 
 else
-  if $*.last and not File.exists? $*.last then
-    block = $*.pop.dup
+  @block = if $*.last and not File.exists? $*.last then
+    $*.pop.dup
   else
-    block = "true"
     @puts_path = true
+    "true"
   end
-  @puts_path and block = "( #{block} ) and puts #{opath}"
+  @puts_path and @block = "( #@block ) and puts #{opath}"
 
 end
 
 if @skip then
   RE_SKIP = Regexp.new @skip, File::ALT_SEPARATOR&&Regexp::IGNORECASE
-  block.insert 0, "next if name =~ RE_SKIP ; "
+  @block.insert 0, "next if name =~ RE_SKIP ; "
 end
 
 if @demand then
   RE_DEMAND = Regexp.new @demand, File::ALT_SEPARATOR&&Regexp::IGNORECASE
-  block.insert 0, "next unless name =~ RE_DEMAND ; "
+  @block.insert 0, "next unless name =~ RE_DEMAND ; "
 end
 
 if @ext then
   RE_EXT = Regexp.new '\A\.(' +
     @ext.split.map { |e| e[ /[^.]*\z/] }.join('|') + ')\z',
     File::ALT_SEPARATOR&&Regexp::IGNORECASE
-  block.insert 0, "ext =~ RE_EXT or next ; "
+  @block.insert 0, "ext =~ RE_EXT or next ; "
 end
 
-@visible and block.insert 0, "visible? or next ; "
+@visible and @block.insert 0, "visible? or next ; "
 
-@vcs and block.insert 0, "no_vcs ; "
-@vim and block.insert 0, "vimswap? and next ; "
+@vcs and @block.insert 0, "no_vcs ; "
+@vim and @block.insert 0, "vimswap? and next ; "
 
 eval "BEGIN { #@blkbegin }" if @blkbegin
 eval "END   { #@blkend   }" if @blkend
@@ -313,11 +317,11 @@ if @show then
     v = self.class.const_get re
     puts_val re, "=", v
   }
-  puts_val block
+  puts_val @block
   exit
 end
 
 error_handle do
-  RbFind.open args, @params do |f| f.instance_eval block end
+  RbFind.open args, @params do |f| f.instance_eval @block end
 end
 
