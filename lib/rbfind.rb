@@ -501,12 +501,12 @@ class RbFind
   end
 
   # :call-seq:
-  #    read( n)    -> str or nil
+  #    read( n = nil)    -> str or nil
   #
   # Read the first <code>n</code> bytes or return <code>nil</code>
-  # for others that regular files.
+  # for others that regular files. <code>nil</code> reads to <em>EOF</em>.
   #
-  def read n
+  def read n = nil
     open { |o| o.read n }
   end
 
