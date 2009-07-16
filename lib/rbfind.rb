@@ -55,7 +55,7 @@
                   # (*) = colored version available (see below)
 
   f.open  { |o| ... }    # open file
-  f.read n               # read first n bytes
+  f.read n = nil         # read first n bytes, nil reads to eof
   f.lines { |l,i| ... }  # open file and yield each |line,lineno|
   f.grep re              # lines with `l =~ re and colsep path, i, l'
   f.binary? n = 1   # test whether first n blocks contain null characters
@@ -504,7 +504,7 @@ class RbFind
   #    read( n = nil)    -> str or nil
   #
   # Read the first <code>n</code> bytes or return <code>nil</code>
-  # for others that regular files. <code>nil</code> reads to <em>EOF</em>.
+  # for others that regular files. <code>nil</code> reads to end of file.
   #
   def read n = nil
     open { |o| o.read n }
