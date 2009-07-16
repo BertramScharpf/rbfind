@@ -127,7 +127,7 @@ Derivated from stat:
 
     Default color setup is "xxHbexfxcxdxbxegedabagacadAx".
     In case you did not call RbFind.colors, the environment variables
-    RBFIND_COLORS and RBFIND_COLOURS are looked up. If neither ist given
+    RBFIND_COLORS and RBFIND_COLOURS are looked up. If neither is given
     but LSCOLORS is set, the fields 2-13 default to that.
 
     The letters mean:
