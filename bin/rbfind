@@ -5,7 +5,7 @@
 #
 
 PROGRAM = <<EOT
-rbfind 1.2.2  --  A find tool using Ruby
+rbfind 1.2.3  --  A find tool using Ruby
 
   Author: Bertram Scharpf <software@bertram-scharpf.de>
   License: BSD
