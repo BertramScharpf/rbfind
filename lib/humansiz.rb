@@ -50,7 +50,7 @@ class Numeric                   # sizes in bytes
   PREFIXES = " kMGTPEZY".scan /./   # :nodoc:
 
   # :call-seq:
-  #    to_h()  -> str
+  #    num.to_h()  -> str
   #
   # To human readable with decimal prefixes.
   #
@@ -65,7 +65,7 @@ class Numeric                   # sizes in bytes
   end
 
   # :call-seq:
-  #    to_hib()  -> str
+  #    num.to_hib()  -> str
   #
   # To human readable with binary prefixes.
   #
@@ -88,5 +88,25 @@ class Numeric                   # time values
   def h ; m    * 60 ; end
   def d ; h    * 24 ; end
   def w ; d    *  7 ; end
+end
+
+
+
+class Time
+
+  # :call-seq:
+  #    time.lsish()  -> str
+  #
+  # Build a time string like in <code>ls -l</code>. When the year is
+  # the current, show the time. While <code>ls</code> doesn't show
+  # the seconds, this will allways include them.
+  #
+  #   Time.now.lsish           #=> " 8. Oct 15:15:19"
+  #   file.stat.mtime.lsish    #=> " 1. Apr 2008    "
+  #
+  def lsish
+    strftime "%e. %b " + (year == Time.now.year ? "%H:%M:%S" : "%Y    ")
+  end
+
 end
 
