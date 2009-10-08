@@ -605,6 +605,15 @@ class RbFind
     puts e
   end
 
+  # :call-seq:
+  #   ls_l  -> nil
+  #
+  # <code>ls -l</code> style output.
+  #
+  def ls_l
+    spcsep stype+modes, user|8, group|8, size[8],
+                                      mtime.lsish, cpath + carrow.to_s
+  end
 
   def rename newname
     fp = @fullpath

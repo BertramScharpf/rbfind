@@ -99,8 +99,8 @@ Examples:
 
   $ rbfind 'col_sep stype+modes, size[10], path'
   $ rbfind 'tab_sep stype+modes, size[10], path'
-  $ rbfind 'spc_sep stype+modes, size.to_h, user, group, path'
-  $ rbfind 'spacesep stype+modes, size.to_h, user, group, path'
+  $ rbfind 'spc_sep stype+modes, size.to_h, user, group, mtime.lsish, path'
+  $ rbfind 'spacesep stype+modes, size.to_h, user, group, mtime.lsish, path'
   $ rbfind 'spacesep modes, user|8, group|8, size[8], cpath + carrow.to_s'
 
   $ rbfind 'rename name.downcase'
