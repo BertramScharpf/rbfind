@@ -27,6 +27,7 @@ OPTIONS = [
   [ %w(--require   -r), :rb,  "require library"],
   [ %w(--fileutils -U), nil,  "include FileUtils module"],
   [ %w(--puts-path -p), nil,  "do 'puts path/cpath' on true block"],
+  [ %w(--ls-l      -P), nil,  "do "ls -l" style output on true block"],
   [ %w(--lines     -l), nil,  "surround block by 'lines { |$_,$.| ... }'"],
   [ %w(--reallines -L), nil,  "same as -l but stop at any null character"],
   [ %w(--grep      -g), nil,  "grep files (implies -pL)"],
@@ -222,6 +223,7 @@ begin
       when '--require'   then require arg
       when '--fileutils' then require "fileutils" ; include FileUtils
       when '--puts-path' then @puts_path = true
+      when '--ls-l'      then @puts_path = :long
       when '--lines'     then @lines.push :plain
       when '--reallines' then @lines.push :real
       when '--grep'      then @lines.push :grep
@@ -247,6 +249,7 @@ end
 @color.nil? and @color = !File::ALT_SEPARATOR&&$stdout.tty?
 opath = @color ? "cpath" : "path"
 
+
 if @lines.any? then
   if @lines.include? :grep then
     RE = Regexp.new @block, (@lines.include? :icase)&&Regexp::IGNORECASE
@@ -264,7 +267,15 @@ else
     @puts_path = true
     "true"
   end
-  @puts_path and @block = "( #@block ) and puts #{opath}"
+  if @puts_path then
+    @block = "( #@block ) and "
+    @block << if @puts_path == :long then
+      "spcsep stype+modes, user|6, group|6, size[6], " +
+          "mtime.lsish, #{opath} + #{@color ? 'carrow' : 'arrow'}.to_s"
+    else
+      "puts #{opath}"
+    end
+  end
 
 end
 
