@@ -611,7 +611,7 @@ class RbFind
   # <code>ls -l</code> style output.
   #
   def ls_l
-    spcsep stype+modes, user|8, group|8, size[8],
+    spcsep stype+modes, user|6, group|6, size[6],
                                       mtime.lsish, cpath + carrow.to_s
   end
 
