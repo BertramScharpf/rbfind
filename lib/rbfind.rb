@@ -635,15 +635,16 @@ class RbFind
   end
 
   # :stopdoc:
-  RE_ABOLUTE = File::ALT_SEPARATOR ?
-    /\A([A-Z]:)?[#{File::SEPARATOR}#{File::ALT_SEPARATOR}]/i :
-    /\A#{File::SEPARATOR}/
+  RE_ABSOLUTE = File::ALT_SEPARATOR ?
+    /\A([A-Z]:)?
+      [#{Regexp.quote File::SEPARATOR}#{Regexp.quote File::ALT_SEPARATOR}]/ix :
+    /\A#{Regexp.quote File::SEPARATOR}/
   # :startdoc:
 
   def build_path
     @path = File.join @levels
     # File.expand_path will expand ~ which is not desired here.
-    @fullpath = if @path =~ RE_ABOLUTE then
+    @fullpath = if @path =~ RE_ABSOLUTE then
       @path
     else
       File.join @wd, @path
