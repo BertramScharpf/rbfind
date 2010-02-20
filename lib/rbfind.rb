@@ -649,7 +649,6 @@ class RbFind
     else
       File.join @wd, @path
     end
-    @dirname = nil
   end
 
   def walk
@@ -657,6 +656,7 @@ class RbFind
     build_path
     @count += 1
     @do_level.call
+    @dirname = nil
   end
 
   def do_level
