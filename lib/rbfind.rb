@@ -583,8 +583,11 @@ class RbFind
     end
   end
 
+  # Windows has ":" in filenames ("C:\...")
+  COLON = File::ALT_SEPARATOR ? "|" : ":"   # :nodoc:
+
   def colsep *args
-    csv ":", *args
+    csv COLON, *args
   end
   alias col_sep colsep
 
