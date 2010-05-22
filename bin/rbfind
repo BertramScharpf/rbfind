@@ -4,12 +4,17 @@
 #  rbfind  --  Ruby Find with many features
 #
 
+require "rbfind"
+
 PROGRAM = <<EOT
-rbfind 1.2.4  --  A find tool using Ruby
+rbfind #{RbFind::VERSION}  --  A find tool using Ruby
 
   Author: Bertram Scharpf <software@bertram-scharpf.de>
   License: BSD
 EOT
+
+
+require 'getoptlong'
 
 OPTIONS = [
   #    options          arg   description
@@ -116,12 +121,9 @@ Examples:
 EOT
 end
 
-require "rbfind"
+
 require "humansiz"
-
 require "English"
-
-require 'getoptlong'
 
 
 class Fixnum

@@ -4,17 +4,9 @@
 
 require "rubygems"
 
+require "lib/rbfind"
 
 class Gem::Specification
-
-  def extract_version
-    File.open "bin/rbfind" do |f|
-      f.each { |l|
-        l =~ /^rbfind\s*(\S*)\s*--/ and return $1
-      }
-    end
-    nil
-  end
 
   alias files_orig files
   def files
@@ -26,11 +18,10 @@ class Gem::Specification
 end
 
 
-
 SPEC = Gem::Specification.new do |s|
   s.name              = "rbfind"
   s.rubyforge_project = "rbfind"
-  s.version           = s.extract_version
+  s.version           = RbFind::VERSION
   s.summary           = "Ruby replacement for the standard Unix find tool"
   s.description       = <<EOT
 A replacement for the standard UNIX command find.

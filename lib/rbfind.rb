@@ -211,6 +211,8 @@ Sort without case sensitivity and preceding dot:
 
 class RbFind
 
+  VERSION = "1.2.5"
+
   SPECIAL_DIRS = %w(. ..)
   CUR_DIR, SUPER_DIR = *SPECIAL_DIRS
 
@@ -421,26 +423,41 @@ class RbFind
 
   class <<self
 
-    def colors str = nil
-      str ||= DEFAULT_COLORS
-      pairs = str.scan /../
-      @@cols = col_letters pairs
+    def colors str
+      @cols = []
+      str.scan /(.)(.)/i do
+        fg, bg = $~.captures.map { |x| x.downcase[0] - ?a }
+        a = []
+        case fg
+          when 0..7 then a.push 30 + fg
+        end
+        a.push 1 if $1 == $1.upcase
+        case bg
+          when 0..7 then a.push 40 + bg
+        end
+        e = a.join ";"
+        @cols.push e
+      end
     end
     alias colours colors
 
-    def col_letters pairs
-      pairs.map do |fgbg|
-        fg, bg = fgbg.split ""
-        fg = case fg
-          when "a".."h" then "#{30 + fg[0] - ?a}"
-          when "A".."H" then "#{30 + fg[0] - ?A};1"
+    def colored arg, num
+      @cols or colors col_str
+      "\e[#{@cols[num]}m#{arg}\e[m"
+    end
+    alias coloured colored
+
+    private
+
+    def col_str
+      ENV[ "RBFIND_COLORS"] || ENV[ "RBFIND_COLOURS"] || (
+        env = DEFAULT_COLORS.dup
+        els = ENV[ "LSCOLORS"]
+        if els then
+          env[ 2*2, els.length] = els
         end
-        bg = case bg
-          when "a".."h" then "#{40 + bg[0] - ?a}"
-          when "A".."H" then "#{40 + bg[0] - ?A}"
-        end
-        [fg, bg].compact.join ";"
-      end
+        env
+      )
     end
 
   end
@@ -737,27 +754,15 @@ class RbFind
       when nil then                        1
       else                                14
     end
-    unless defined? @@cols then
-      env = ENV[ "RBFIND_COLORS"].to_s||ENV[ "RBFIND_COLOURS"].to_s
-      if env.empty? then
-        els = ENV[ "LSCOLORS"].to_s
-        if els.any? then
-          env = DEFAULT_COLORS.dup
-          env[ 2*2, els.length] = els
-        end
-      end
-      env = nil if env.empty?
-      self.class.colors env
-    end
-    "\e[#{@@cols[code]}m#{arg}\e[m"
+    self.class.colored arg, code
   end
 
   def col_type
     # Overwrite this to define custom colors
     # Example:
-    #   c = RbFind.col_letters "ax"
-    #   case name
-    #     when /\.mpg$/ then c[ 0]
+    #   case ext
+    #     when ".png", /\.jpe?g$/, /\.tiff?$/ then 15
+    #     when /\.tar\.(gz|bz2)$/             then 16
     #   end
   end
 
