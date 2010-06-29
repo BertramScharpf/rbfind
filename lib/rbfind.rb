@@ -533,9 +533,16 @@ class RbFind
   # Yield line by line together with the line number <code>i</code>.
   #
   def lines
-    n = 0
-    open { |file| file.each { |line| n += 1 ; line.chomp! ; yield line, n } }
-    nil
+    block_given? or return lines do end
+    open { |file|
+      n = 0
+      file.each_line { |line|
+        n += 1
+        line.chomp!
+        yield line, n
+      }
+      n
+    }
   end
 
   def grep re
