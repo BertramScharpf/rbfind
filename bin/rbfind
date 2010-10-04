@@ -46,6 +46,7 @@ OPTIONS = [
   [ %w(--visible   -I), nil,  "skip hidden files (starting with .dot)"],
   [ %w(--begin     -B), :blk, "BEGIN block"],
   [ %w(--end       -E), :blk, "END block"],
+  [ %w(--file      -f), :blk, "read block expression from file"],
 ]
 
 def usage
@@ -239,13 +240,17 @@ begin
       when '--visible'   then @visible = true
       when '--begin'     then @blkbegin = arg
       when '--end'       then @blkend   = arg
+      when '--file'      then @block = File.read arg
     end
   end
 rescue GetoptLong::InvalidOption
   $stderr.puts $!
   $stderr.puts
   usage
-  exit 1
+  exit 9
+rescue
+  $stderr.puts $!
+  exit 8
 end
 
 @color.nil? and @color = !File::ALT_SEPARATOR&&$stdout.tty?
@@ -264,7 +269,7 @@ case @lines
     @binary or @block = "not binary? and #@block"
 
   else
-    @block = if $*.last and not File.exists? $*.last then
+    @block ||= if $*.last and not File.exists? $*.last then
       $*.pop.dup
     else
       @puts_path ||= true
