@@ -248,17 +248,15 @@ class RbFind
       params = params.dup
       dl = :do_level_depth if params.delete :depth
       md = params.delete :max_depth
+      @max_depth = md.to_i if md
       st = params.delete :sort
-      de = params.delete :dir_error
-      fe = params.delete :file_error
+      @sort = sort_parser st
+      @dir_error = params.delete :dir_error
+      @file_error = params.delete :file_error
       params.empty?  or
         raise RuntimeError, "Unknown parameter(s): #{params.keys.join ','}."
     end
-    @do_level  = method dl||:do_level
-    @max_depth = md.to_i if md
-    sort_parser st
-    @dir_error = de
-    @file_error = fe
+    @do_level = method dl||:do_level
 
     @wd, @start = Dir.getwd, Time.now
     @count = 0
@@ -647,13 +645,13 @@ class RbFind
 
   def sort_parser st
     case st
-      when Proc    then @sort_proc = st
-      when Numeric then @sort = st
-      when true    then @sort = +1
-      when false   then @sort =  0
-      when nil     then @sort = +1
+      when Proc    then st
+      when Numeric then st
+      when true    then +1
+      when false   then  0
+      when nil     then +1
       else
-        @sort = case st.to_s
+        case st.to_s
           when "^", "reverse", /^desc/, /^-/ then -1
           when "unsorted", "*"               then  0
           else                                    +1
@@ -720,9 +718,9 @@ class RbFind
 
   def scan_dir
     dir = read_dir
-    if @sort_proc then
-      dir = dir.sort_by &@sort_proc
-    elsif @sort.nonzero? then
+    if @sort.respond_to? :call then
+      dir = dir.sort_by &@sort
+    elsif @sort and @sort.nonzero? then
       dir.sort!
       dir.reverse! if @sort < 0
     end
