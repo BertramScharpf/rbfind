@@ -509,7 +509,7 @@ class RbFind
   # nothing will be done.
   #
   def open &block
-    file? and File.open path, &block
+    File.open path, &block if file?
   rescue Errno::EACCES
     @file_error or raise
     @file_error.call $!
