@@ -6,6 +6,3 @@
 .*.sw[a-z]
 *.gem
 
-# Generated locally
-README
-

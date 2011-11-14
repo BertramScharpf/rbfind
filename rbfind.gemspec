@@ -6,18 +6,6 @@ require "rubygems"
 
 require "lib/rbfind"
 
-class Gem::Specification
-
-  alias files_orig files
-  def files
-    @built ||= system "rake"
-    @built or raise "build (rake) failed."
-    files_orig
-  end
-
-end
-
-
 SPEC = Gem::Specification.new do |s|
   s.name              = "rbfind"
   s.rubyforge_project = "rbfind"
@@ -34,20 +22,25 @@ EOT
   s.homepage          = "http://www.bertram-scharpf.de"
   s.requirements      = "just Ruby"
   s.has_rdoc          = true
+  s.extensions        = %w(
+                          Rakefile
+                        )
   s.files             = %w(
-                          rbfind.rb
-                          humansiz.rb
-                        ).map do |p| File.join "lib", p end
+                          lib/rbfind.rb
+                          lib/humansiz.rb
+                        )
   s.executables       = %w(
                           rbfind
                         )
   s.extra_rdoc_files  = %w(
-                          README
                           LICENSE
                         )
+  s.rdoc_options.push   %w(--charset utf-8 --main README README)
 end
 
 if $0 == __FILE__ then
   Gem::Builder.new( SPEC).build
+else
+  SPEC
 end
 
