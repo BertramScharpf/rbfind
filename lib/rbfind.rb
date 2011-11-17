@@ -209,6 +209,12 @@ Sort without case sensitivity and preceding dot:
 
 =end
 
+# :stopdoc:
+unless String.public_method_defined? :ord then
+  class String ; def ord ; self[0].ord ; end ; end
+end
+# :startdoc:
+
 class RbFind
 
   VERSION = "1.3"
@@ -424,7 +430,7 @@ class RbFind
     def colors str
       @cols = []
       str.scan /(.)(.)/i do
-        fg, bg = $~.captures.map { |x| x.downcase[0] - ?a }
+        fg, bg = $~.captures.map { |x| x.downcase.ord - ?a.ord }
         a = []
         case fg
           when 0..7 then a.push 30 + fg
