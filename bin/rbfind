@@ -152,7 +152,7 @@ end
 
 class RbFind
   # Alias the question marks away from all method names because
-  # they're a nuisance on the bash command line.
+  # they're a nuisance on the command line.
 
   alias hidden       hidden?
   alias visible      visible?
@@ -314,7 +314,6 @@ eval "END   { #@blkend   }" if @blkend
 
 args = $*.dup
 args.push $stdin.read.map { |l| l.chomp } unless args.any? or $stdin.tty?
-@params[ :dir_error] = @params[ :file_error] = proc { |e| $stderr.puts e }
 
 if @show then
   class Proc
@@ -339,6 +338,14 @@ if @show then
   puts_val @block
   exit
 end
+
+@block = <<EOT
+begin
+  #@block
+rescue
+  $stderr.puts $!
+end
+EOT
 
 error_handle do
   RbFind.open args, @params do |f| f.instance_eval @block end

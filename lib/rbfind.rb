@@ -347,7 +347,7 @@ class RbFind
   def method_missing sym, *args, &block
     stat.send sym, *args, &block
   rescue NoMethodError
-    raise NoMethodError, "Undefined method `#{sym}'."
+    super
   end
 
   public
