@@ -2,11 +2,9 @@
 #  rbfind.gemspec  --  RbFind Gem specification
 #
 
-require "rubygems"
-
 require "lib/rbfind"
 
-SPEC = Gem::Specification.new do |s|
+Gem::Specification.new do |s|
   s.name              = "rbfind"
   s.rubyforge_project = "rbfind"
   s.version           = RbFind::VERSION
@@ -35,12 +33,6 @@ EOT
   s.extra_rdoc_files  = %w(
                           LICENSE
                         )
-  s.rdoc_options.push   %w(--charset utf-8 --main README README)
-end
-
-if $0 == __FILE__ then
-  Gem::Builder.new( SPEC).build
-else
-  SPEC
+  s.rdoc_options.concat %w(--charset utf-8 --main README README)
 end
 
