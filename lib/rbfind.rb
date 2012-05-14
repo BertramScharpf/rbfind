@@ -509,9 +509,24 @@ class RbFind
 
 
   # :call-seq:
+  #    empty?()     -> true or false
+  #
+  # Look up if the directory is empty. If the object is not a directory,
+  # +nil+ is returned.
+  #
+  def empty?
+    s = SPECIAL_DIRS.dup
+    (read_dir or return).each { |f|
+      next if s.delete f
+      return false
+    }
+    true
+  end
+
+  # :call-seq:
   #    open() { |h| ... }    -> obj
   #
-  # Open the file for reading. When the object is not a regular file,
+  # Open the file for reading. If the object is not a regular file,
   # nothing will be done.
   #
   def open &block
@@ -519,6 +534,7 @@ class RbFind
   rescue Errno::EACCES
     @file_error or raise
     @file_error.call $!
+    nil
   end
 
   # :call-seq:
@@ -696,12 +712,12 @@ class RbFind
     rescue Prune
       return
     end
-    scan if File.exists? @path
+    scan_dir
   end
 
   def do_level_depth
     path, fullpath = @path, @fullpath
-    scan
+    scan_dir
     @path, @fullpath = path, fullpath
     begin
       @block.call self
@@ -710,20 +726,16 @@ class RbFind
     end
   end
 
-  def scan
-    scan_dir if stat.directory?
-  end
-
   def read_dir
-    (Dir.entries @fullpath) - SPECIAL_DIRS
+    Dir.new @fullpath if File.directory? @fullpath
   rescue Errno::EACCES
     @dir_error or raise
     @dir_error.call $!
-    []
+    nil
   end
 
   def scan_dir
-    dir = read_dir
+    dir = (read_dir or return).entries - SPECIAL_DIRS
     if @sort.respond_to? :call then
       dir = dir.sort_by &@sort
     elsif @sort and @sort.nonzero? then
@@ -731,9 +743,12 @@ class RbFind
       dir.reverse! if @sort < 0
     end
     dir.each { |f|
-      @levels.push f
-      walk
-      @levels.pop
+      begin
+        @levels.push f
+        walk
+      ensure
+        @levels.pop
+      end
     }
   end
 
