@@ -54,6 +54,9 @@
 
                   # (*) = colored version available (see below)
 
+  f.empty?               # directory is empty
+  f.entries              # directory entries
+
   f.open  { |o| ... }    # open file
   f.read n = nil         # read first n bytes, nil reads to eof
   f.lines { |l,i| ... }  # open file and yield each |line,lineno|
@@ -215,12 +218,38 @@ unless String.public_method_defined? :ord then
 end
 # :startdoc:
 
-class RbFind
-
-  VERSION = "1.3"
+class Dir
 
   SPECIAL_DIRS = %w(. ..)
   CUR_DIR, SUPER_DIR = *SPECIAL_DIRS
+
+  # :call-seq:
+  #    each!() { |e| ... }    -> self
+  #
+  # Call block for all entries except "." and "..".
+  #
+  def each!
+    s = SPECIAL_DIRS.dup
+    each { |f|
+      next if s.delete f
+      yield f
+    }
+  end
+
+  # :call-seq:
+  #    entires!()     -> ary
+  #
+  # All entries except "." and "..".
+  #
+  def entries!
+    entries - SPECIAL_DIRS
+  end
+
+end
+
+class RbFind
+
+  VERSION = "1.3"
 
   class <<self
     private :new
@@ -257,8 +286,7 @@ class RbFind
       @max_depth = md.to_i if md
       st = params.delete :sort
       @sort = sort_parser st
-      @dir_error = params.delete :dir_error
-      @file_error = params.delete :file_error
+      @error = params.delete :error
       params.empty?  or
         raise RuntimeError, "Unknown parameter(s): #{params.keys.join ','}."
     end
@@ -515,12 +543,20 @@ class RbFind
   # +nil+ is returned.
   #
   def empty?
-    s = SPECIAL_DIRS.dup
-    (read_dir or return).each { |f|
-      next if s.delete f
-      return false
-    }
+    read_dir.each! { |f| return false }
     true
+  rescue Errno::ENOTDIR
+  end
+
+  # :call-seq:
+  #    entires()     -> ary
+  #
+  # Return all entries in an array. If the object is not a directory,
+  # +nil+ is returned.
+  #
+  def entries
+    read_dir.entries!
+  rescue Errno::ENOTDIR
   end
 
   # :call-seq:
@@ -530,11 +566,9 @@ class RbFind
   # nothing will be done.
   #
   def open &block
-    File.open path, &block if file?
-  rescue Errno::EACCES
-    @file_error or raise
-    @file_error.call $!
-    nil
+    handle_error Errno::EACCES do
+      File.open path, &block if file?
+    end
   end
 
   # :call-seq:
@@ -727,15 +761,14 @@ class RbFind
   end
 
   def read_dir
-    Dir.new @fullpath if File.directory? @fullpath
-  rescue Errno::EACCES
-    @dir_error or raise
-    @dir_error.call $!
-    nil
+    handle_error Errno::EACCES do
+      Dir.new @fullpath
+    end
   end
 
   def scan_dir
-    dir = (read_dir or return).entries - SPECIAL_DIRS
+    return unless File.directory? @fullpath
+    dir = (read_dir or return).entries!
     if @sort.respond_to? :call then
       dir = dir.sort_by &@sort
     elsif @sort and @sort.nonzero? then
@@ -750,6 +783,19 @@ class RbFind
         @levels.pop
       end
     }
+  end
+
+  def handle_error err = nil
+    yield
+  rescue err||StandardError
+    if @error.respond_to? :call then
+      @error.call $!
+    elsif @error then
+      instance_eval @error
+    else
+      raise
+    end
+    nil
   end
 
   def col_stat arg, s

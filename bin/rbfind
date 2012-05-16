@@ -339,11 +339,19 @@ if @show then
   exit
 end
 
+@params[ :error] = if @color then
+  proc do |e|
+    $stderr.puts "\e[31m#{e.class}: \e[1m#{e}\e[m"
+  end
+else
+  proc do |e|
+    $stderr.puts "#{e.class}: #{e}"
+  end
+end
+
 @block = <<EOT
-begin
+handle_error do
   #@block
-rescue
-  $stderr.puts $!
 end
 EOT
 
