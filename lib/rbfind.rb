@@ -286,6 +286,7 @@ class RbFind
       @max_depth = md.to_i if md
       st = params.delete :sort
       @sort = sort_parser st
+      @follow = params.delete :follow
       @error = params.delete :error
       params.empty?  or
         raise RuntimeError, "Unknown parameter(s): #{params.keys.join ','}."
@@ -687,14 +688,14 @@ class RbFind
   end
 
   def rename newname
-    fp = @fullpath
+    p = @path
     nb = File.basename newname
     newname == nb or raise RuntimeError,
           "#{self.class}: rename to `#{newname}' may not be a path."
+    File.rename p, @path
     @levels.pop
     @levels.push newname
     build_path
-    File.rename fp, @fullpath
   end
 
   private
@@ -730,6 +731,7 @@ class RbFind
     else
       File.join @wd, @path
     end
+    if @path.empty? then @path = Dir::CUR_DIR end
   end
 
   def walk
@@ -750,9 +752,12 @@ class RbFind
   end
 
   def do_level_depth
-    path, fullpath = @path, @fullpath
-    scan_dir
-    @path, @fullpath = path, fullpath
+    begin
+      path, fullpath = @path, @fullpath
+      scan_dir
+    ensure
+      @path, @fullpath = path, fullpath
+    end
     begin
       @block.call self
     rescue Prune
@@ -762,12 +767,22 @@ class RbFind
 
   def read_dir
     handle_error Errno::EACCES do
-      Dir.new @fullpath
+      Dir.new @path
     end
   end
 
   def scan_dir
-    return unless File.directory? @fullpath
+    return unless File.directory? @path
+    if File.symlink? @path then
+      return unless @follow and handle_error do
+        d = @path
+        while d != Dir::CUR_DIR do
+          d, = File.split d
+          raise "circular recursion in #@path" if File.identical? d, @path
+        end
+        true
+      end
+    end
     dir = (read_dir or return).entries!
     if @sort.respond_to? :call then
       dir = dir.sort_by &@sort

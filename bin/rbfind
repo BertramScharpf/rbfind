@@ -27,6 +27,7 @@ OPTIONS = [
   [ %w(--colored   -c), nil,  "force color on -p or default output"],
   [ %w(--depth     -d), nil,  "yield directory after its contents"],
   [ %w(--maxdepth  -m), :num, "maxium step depth"],
+  [ %w(--follow    -y), nil,  "follow symbolic links"],
   [ %w(--sort      -s), :str, "=reverse/desc/-1,unsorted; default is sorted"],
   [ %w(--sort-by   -S), :str, "sort expression ('name' is name)"],
   [ %w(--require   -r), :rb,  "require library"],
@@ -191,8 +192,7 @@ def error_handle
     begin
       yield
     rescue
-      $!.message =~ %r/:\s+/
-      $stderr.puts "Error: #{$' || $!}"
+      $stderr.puts "#{$!.class}: #$!"
       exit 1
     rescue NoMemoryError, ScriptError, SignalException
       $stderr.puts $!.inspect
@@ -221,6 +221,7 @@ begin
       when '--colored'   then @color = true
       when '--depth'     then @params[ :depth] = true
       when '--maxdepth'  then @params[ :max_depth] = arg
+      when '--follow'    then @params[ :follow] = true
       when '--sort'      then @params[ :sort] = arg
       when '--sort-by'   then @params[ :sort] = instance_eval "proc { |name| #{arg} }"
       when '--require'   then require arg
