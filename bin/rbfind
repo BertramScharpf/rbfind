@@ -128,6 +128,18 @@ require "humansiz"
 require "English"
 
 
+class Time
+  # autoload several formating methods
+  def method_missing sym, *args, &block
+    if require "time" then
+      send sym, *args, &block
+    else
+      super
+    end
+  end
+end
+
+
 class Fixnum
   # convenient formatting, right justification
   def [] width
