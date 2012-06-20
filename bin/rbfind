@@ -110,6 +110,9 @@ Examples:
   $ rbfind 'tab_sep stype+modes, size[10], path'
   $ rbfind 'spc_sep stype+modes, size.to_h, user, group, mtime.lsish, path'
   $ rbfind 'spacesep stype+modes, size.to_h, user, group, mtime.lsish, path'
+  $ rbfind 'spacesep stype+modes, size.to_h, user, group, mtime!, path'
+  $ rbfind 'spacesep stype+modes, size.to_h, user, group, mtime.i, path'
+  $ rbfind 'spacesep mtime.u, path'
   $ rbfind 'spacesep modes, user|8, group|8, size[8], cpath + carrow.to_s'
 
   $ rbfind 'rename name.downcase'
@@ -129,6 +132,7 @@ require "English"
 
 
 class Time
+
   # autoload several formating methods
   def method_missing sym, *args, &block
     if require "time" then
@@ -137,6 +141,13 @@ class Time
       super
     end
   end
+
+  # several common schemes
+  def i ; iso8601   ; end
+  def x ; xmlschema ; end
+  def r ; rfc822    ; end
+  def u ; utc.strftime "%Y-%m-%d %H:%M:%S" ; end
+
 end
 
 
@@ -167,9 +178,9 @@ class NilClass
 end
 
 class RbFind
+
   # Alias the question marks away from all method names because
   # they're a nuisance on the command line.
-
   alias hidden       hidden?
   alias visible      visible?
   alias broken_link  broken_link?
@@ -197,6 +208,10 @@ class RbFind
   def writable        ; writable?         ; end
   def writable_real   ; writable_real?    ; end
   def zero            ; zero?             ; end
+
+  # just for convenience
+  def mtime! ; mtime.strftime "%Y-%m-%d %H:%M:%S %z" ; end
+
 end
 
 
