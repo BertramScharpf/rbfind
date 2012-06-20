@@ -160,7 +160,10 @@ class NilClass
   def <= oth ; false ; end
   def >  oth ; false ; end
   def >= oth ; false ; end
-  def between? oth ; false ; end
+  def between? min, max ; false ; end
+
+  def [] width ; " "*width ; end
+  def |  width ; " "*width ; end
 end
 
 class RbFind
