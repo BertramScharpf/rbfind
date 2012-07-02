@@ -115,6 +115,9 @@ Examples:
   $ rbfind 'spacesep mtime.u, path'
   $ rbfind 'spacesep modes, user|8, group|8, size[8], cpath + carrow.to_s'
 
+  $ rbfind 'spacesep digest_md5, size[8], path'
+  $ rbfind 'spacesep digest_sha256, size[8], path'
+
   $ rbfind 'rename name.downcase'
   $ rbfind 'ext == ".tgz" and rename without_ext+".tar.gz"'
 
@@ -177,7 +180,7 @@ class NilClass
   def |  width ; " "*width ; end
 end
 
-class RbFind
+class RbFindX < RbFind
 
   # Alias the question marks away from all method names because
   # they're a nuisance on the command line.
@@ -211,6 +214,22 @@ class RbFind
 
   # just for convenience
   def mtime! ; mtime.strftime "%Y-%m-%d %H:%M:%S %z" ; end
+
+  # convenient digest methods
+  def method_missing sym, *args, &block
+    if sym.to_s =~ /\Adigest_(.*)/ then
+      m = $1
+      c = m.upcase
+      begin
+        (Digest.const_get c).hexdigest read
+      rescue NameError
+        if m =~ /sha\d\d\d/ then m = "sha2" end
+        require "digest/#{m}" and retry
+      end
+    else
+      super
+    end
+  end
 
 end
 
@@ -387,6 +406,6 @@ end
 EOT
 
 error_handle do
-  RbFind.open args, @params do |f| f.instance_eval @block end
+  RbFindX.open args, @params do |f| f.instance_eval @block end
 end
 
