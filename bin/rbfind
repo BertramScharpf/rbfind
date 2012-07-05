@@ -44,7 +44,7 @@ OPTIONS = [
   [ %w(--skip      -k), :lst, "filenames to skip"],
   [ %w(--demand    -D), :lst, "skip all filenames but these"],
   [ %w(--ext       -e), :lst, "skip all filename extensions but these"],
-  [ %w(--visible   -I), nil,  "skip hidden files (starting with .dot)"],
+  [ %w(--visible   -I), nil,  "skip all hidden (starting with .dot)"],
   [ %w(--begin     -B), :blk, "BEGIN block"],
   [ %w(--end       -E), :blk, "END block"],
   [ %w(--file      -f), :blk, "read block expression from file"],
@@ -354,7 +354,7 @@ if @ext then
   @block.insert 0, "ext =~ RE_EXT or next ; "
 end
 
-@visible and @block.insert 0, "visible? or next ; "
+@visible and @block.insert 0, "visible? or prune ; "
 
 @vcs and @block.insert 0, "no_vcs ; "
 @vim and @block.insert 0, "vimswap? and next ; "
