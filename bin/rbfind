@@ -212,22 +212,22 @@ class RbFindX < RbFind
   def writable_real   ; writable_real?    ; end
   def zero            ; zero?             ; end
 
-  # just for convenience
-  def mtime! ; mtime.strftime "%Y-%m-%d %H:%M:%S %z" ; end
-
-  # convenient digest methods
+  # convenient digest and time format methods
   def method_missing sym, *args, &block
-    if sym.to_s =~ /\Adigest_(.*)/ then
-      m = $1
-      c = m.upcase
-      begin
-        (Digest.const_get c).hexdigest read
-      rescue NameError
-        if m =~ /sha\d\d\d/ then m = "sha2" end
-        require "digest/#{m}" and retry
-      end
-    else
-      super
+    case sym.to_s
+      when /\Adigest_(.*)/ then
+        m = $1
+        c = m.upcase
+        begin
+          (Digest.const_get c).hexdigest read
+        rescue NameError
+          if m =~ /sha\d\d\d/ then m = "sha2" end
+          require "digest/#{m}" and retry
+        end
+      when /\A([amc]time)!\z/ then
+        (send $1).strftime "%Y-%m-%d %H:%M:%S %z"
+      else
+        super
     end
   end
 
