@@ -319,7 +319,7 @@ case @lines
     @binary or @block = "not binary? and #@block"
 
   else
-    @block ||= if $*.last and not File.exists? $*.last then
+    @block ||= if $*.last and not (File.lstat $*.last rescue nil) then
       $*.pop.dup
     else
       @puts_path ||= true

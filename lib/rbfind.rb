@@ -296,7 +296,7 @@ class RbFind
     @wd, @start = Dir.getwd, Time.now
     @count = 0
     if path then
-      raise Errno::ENOENT, path unless File.exists? path
+      File.lstat path
       @levels.push path
       walk
     else
