@@ -804,7 +804,7 @@ class RbFind
     yield
   rescue err||StandardError
     if @error.respond_to? :call then
-      @error.call $!
+      @error.call
     elsif @error then
       instance_eval @error
     else
