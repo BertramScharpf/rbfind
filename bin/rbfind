@@ -401,8 +401,9 @@ end
 
 @params[ :error] = proc do
   case $!
-    when Errno::EPIPE then raise
-    else                   show_error $!
+    when Errno::EPIPE         then raise
+    when NameError, TypeError then raise
+    else                           show_error $!
   end
 end
 
