@@ -237,7 +237,7 @@ class Dir
   end
 
   # :call-seq:
-  #    entires!()     -> ary
+  #    entries!()     -> ary
   #
   # All entries except "." and "..".
   #
