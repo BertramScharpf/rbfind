@@ -166,6 +166,10 @@ class String
   def | width
     ljust width
   end
+  # conventient date/time construction
+  def time
+    Time.parse self
+  end
 end
 
 class NilClass

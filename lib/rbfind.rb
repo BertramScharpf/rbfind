@@ -318,8 +318,8 @@ class RbFind
 
   def depth ; @levels.size ; end
 
-  def hidden?  ; name =~ /^\./  ; end
-  def visible? ; not hidden?    ; end
+  def hidden?  ; name =~ /^\./ ; end
+  def visible? ; not hidden?   ; end
 
   def stat ; File.lstat @path ; end
   def mode ; stat.mode        ; end
