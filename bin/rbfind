@@ -353,7 +353,7 @@ end
 
 if @ext then
   RE_EXT = Regexp.new '\A\.(' +
-    @ext.split.map { |e| e[ /[^.]*\z/] }.join('|') + ')\z',
+    @ext.split(/ +|,/).map { |e| e[ /\A\.?(.*)\z/, 1] }.join('|') + ')\z',
     File::ALT_SEPARATOR&&Regexp::IGNORECASE
   @block.insert 0, "ext =~ RE_EXT or next ; "
 end
