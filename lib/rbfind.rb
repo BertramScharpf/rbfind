@@ -340,7 +340,8 @@ class RbFind
   #    broken_link?()   -> true or false
   #
   def broken_link?
-    not (File.stat @path rescue nil) if stat.symlink?
+    return unless stat.symlink?
+    !File.stat @path rescue true
   end
 
   ARROW = " -> "  # :nodoc:

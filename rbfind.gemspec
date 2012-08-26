@@ -2,7 +2,7 @@
 #  rbfind.gemspec  --  RbFind Gem specification
 #
 
-require "lib/rbfind"
+require "./lib/rbfind"
 
 Gem::Specification.new do |s|
   s.name              = "rbfind"
