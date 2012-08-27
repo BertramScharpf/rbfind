@@ -602,7 +602,14 @@ class RbFind
   end
 
   def grep re
-    lines { |l,i| l =~ re and colsep path, i, l }
+    lines { |l,i|
+      begin
+        l =~ re and colsep path, i, l
+      rescue ArgumentError
+        l.force_encoding "iso-8859-1"
+        l.encode! "utf-8"
+      end
+    }
   end
 
   BLOCK_SIZE = 512   # :nodoc:
