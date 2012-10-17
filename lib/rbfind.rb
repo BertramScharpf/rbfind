@@ -551,6 +551,16 @@ class RbFind
   end
 
   # :call-seq:
+  #    contains?( name)     -> true or false
+  #
+  # Check whether a directory contains an entry.
+  #
+  def contains? name
+    c = File.join @path, name
+    File.exists? c
+  end
+
+  # :call-seq:
   #    entires()     -> ary
   #
   # Return all entries in an array. If the object is not a directory,
@@ -569,7 +579,7 @@ class RbFind
   #
   def open &block
     handle_error Errno::EACCES do
-      File.open path, &block if file?
+      File.open @path, &block if file?
     end
   end
 
@@ -604,7 +614,7 @@ class RbFind
   def grep re
     lines { |l,i|
       begin
-        l =~ re and colsep path, i, l
+        l =~ re and colsep @path, i, l
       rescue ArgumentError
         l.force_encoding "iso-8859-1"
         l.encode! "utf-8"
@@ -700,10 +710,11 @@ class RbFind
     nb = File.basename newname
     newname == nb or raise RuntimeError,
           "#{self.class}: rename to `#{newname}' may not be a path."
-    File.rename p, @path
     @levels.pop
     @levels.push newname
     build_path
+    File.rename p, @path
+    nil
   end
 
   private
