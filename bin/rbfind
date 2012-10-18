@@ -307,10 +307,16 @@ rescue
   exit 8
 end
 
-@color.nil? and @color = !File::ALT_SEPARATOR&&$stdout.tty?
-opath = @color ? "cpath" : "path"
+def color_on stream
+  unless @color.nil? then
+    @color
+  else
+    !File::ALT_SEPARATOR && stream.tty?
+  end
+end
 
-
+co = color_on $stdout
+opath = co ? "cpath" : "path"
 case @lines
   when :plain then
     @puts_path and @block = "( #@block ) and colsep #{opath}, $., $_"
@@ -320,6 +326,7 @@ case @lines
   when :grep then
     RE = Regexp.new @block, @icase && Regexp::IGNORECASE
     @block = "grep RE"
+    @block << ", true" if co
     @binary or @block = "not binary? and #@block"
 
   else
@@ -333,7 +340,7 @@ case @lines
       @block = "( #@block ) and "
       @block << if @puts_path == :long then
         "spcsep stype+modes, user|6, group|6, size[6], " +
-            "mtime.lsish, #{opath} + #{@color ? 'carrow' : 'arrow'}.to_s"
+            "mtime.lsish, #{opath} + #{co ? 'carrow' : 'arrow'}.to_s"
       else
         "puts #{opath}"
       end
@@ -393,7 +400,7 @@ if @show then
   exit
 end
 
-if @color then
+if color_on $stderr then
   def show_error e
     $stderr.puts "\e[31m#{e.class}: \e[1m#{e}\e[m"
   end

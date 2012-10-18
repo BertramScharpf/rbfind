@@ -601,13 +601,23 @@ class RbFind
     }
   end
 
-  def grep re
+  def grep re, color = nil
+    case color
+      when /\A\d+(?:;\d+)*\z/, nil, false then
+      when true then color = "31;1"  # red
+      else           raise "Illegal color spec: #{color}"
+    end
     lines { |l,i|
       begin
-        l =~ re and colsep path, i, l
+        l =~ re or next
+        if color then
+          l = "#$`\e[#{color}m#$&\e[m#$'"
+        end
+        colsep path, i, l
       rescue ArgumentError
         l.force_encoding "iso-8859-1"
         l.encode! "utf-8"
+        retry
       end
     }
   end
