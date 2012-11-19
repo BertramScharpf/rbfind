@@ -219,7 +219,7 @@ class RbFindX < RbFind
   # convenient digest and time format methods
   def method_missing sym, *args, &block
     case sym.to_s
-      when /\Adigest_(.*)/ then
+      when /\Adigest_(.*)/, /\A([a-z]+[0-9]+)\z/ then
         m = $1
         c = m.upcase
         begin
@@ -227,6 +227,7 @@ class RbFindX < RbFind
         rescue NameError
           if m =~ /sha\d\d\d/ then m = "sha2" end
           require "digest/#{m}" and retry
+          raise
         end
       when /\A([amc]time)!\z/ then
         (send $1).strftime "%Y-%m-%d %H:%M:%S %z"
