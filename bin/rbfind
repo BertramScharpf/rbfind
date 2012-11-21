@@ -375,7 +375,12 @@ eval "BEGIN { #@blkbegin }" if @blkbegin
 eval "END   { #@blkend   }" if @blkend
 
 args = $*.dup
-args.push $stdin.read.map { |l| l.chomp } unless args.any? or $stdin.tty?
+if args.empty? and not $stdin.tty? then
+  $stdin.each_line { |l|
+    l.chomp!
+    args.push l
+  }
+end
 
 if @show then
   class Proc
