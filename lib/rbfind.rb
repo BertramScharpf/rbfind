@@ -355,6 +355,7 @@ class RbFind
     ARROW + r if r
   end
 
+  def now ; @start ; end
   def age ; @start - stat.mtime ; end
   alias age_secs age
   alias age_s    age_secs
