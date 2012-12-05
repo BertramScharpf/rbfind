@@ -46,8 +46,8 @@ OPTIONS = [
   [ %w(--demand    -D), :lst, "skip all filenames but these"],
   [ %w(--ext       -e), :lst, "skip all filename extensions but these"],
   [ %w(--visible   -I), nil,  "skip all hidden (starting with .dot)"],
-  [ %w(--begin     -B), :blk, "BEGIN block"],
-  [ %w(--end       -E), :blk, "END block"],
+  [ %w(--begin     -B), :blk, "eval block before begin"],
+  [ %w(--end       -E), :blk, "eval block after end"],
   [ %w(--file      -f), :blk, "read block expression from file"],
 ]
 
@@ -240,23 +240,6 @@ class RbFindX < RbFind
 end
 
 
-def error_handle
-  if @verbose then
-    yield
-  else
-    begin
-      yield
-    rescue
-      $stderr.puts "#{$!.class}: #$!"
-      exit 1
-    rescue NoMemoryError, ScriptError, SignalException
-      $stderr.puts $!.inspect
-      exit 2
-    end
-  end
-end
-
-
 @params = {}
 
 opts = GetoptLong.new *OPTIONS.map { |(long,short),arg,|
@@ -319,96 +302,6 @@ def color_on stream
   end
 end
 
-co = color_on $stdout
-opath = co ? "cpath" : "path"
-case @lines
-  when :plain then
-    @puts and @block = "( #@block ) and colsep #{opath}, $., $_"
-    @real and @block = "break if ~/\0/o ; #@block"
-    @block = "lines { |line,num| $_, $. = line, num ; #@block }"
-
-  when :grep then
-    RE = Regexp.new @block, @icase && Regexp::IGNORECASE
-    @block = "grep RE"
-    @block << ", true" if co
-    @binary or @block = "not binary? and #@block"
-
-  else
-    @block ||= if $*.last and not (File.exists? $*.last) then
-      $*.pop.dup
-    else
-      @puts ||= true
-      "true"
-    end
-    if @puts then
-      @block = "( #@block ) and "
-      @block << if @wd then
-        "spcsep stype+modes, user|#@wd, group|#@wd, size[#@wd], " +
-            "mtime.lsish, #{opath} + #{co ? 'carrow' : 'arrow'}.to_s"
-      else
-        "puts #{opath}"
-      end
-    end
-
-end
-
-if @skip then
-  RE_SKIP = Regexp.new @skip, File::ALT_SEPARATOR&&Regexp::IGNORECASE
-  @block.insert 0, "next if name =~ RE_SKIP ; "
-end
-
-if @demand then
-  RE_DEMAND = Regexp.new @demand, File::ALT_SEPARATOR&&Regexp::IGNORECASE
-  @block.insert 0, "next unless name =~ RE_DEMAND ; "
-end
-
-if @ext then
-  RE_EXT = Regexp.new '\A\.(' +
-    @ext.split(/ +|,/).map { |e| e[ /\A\.?(.*)\z/, 1] }.join('|') + ')\z',
-    File::ALT_SEPARATOR&&Regexp::IGNORECASE
-  @block.insert 0, "ext =~ RE_EXT or next ; "
-end
-
-@visible and @block.insert 0, "visible? or prune ; "
-
-@vcs and @block.insert 0, "no_vcs ; "
-@vim and @block.insert 0, "vimswap? and next ; "
-
-eval "BEGIN { #@blkbegin }" if @blkbegin
-eval "END   { #@blkend   }" if @blkend
-
-args = $*.dup
-if args.empty? and not $stdin.tty? then
-  $stdin.each_line { |l|
-    l.chomp!
-    args.push l
-  }
-end
-
-if @show then
-  class Proc
-    def to_s
-      "#<%s:0x%08x>" % [ self.class, object_id]
-    end
-  end
-  INDENT = " "*2
-  def puts_val *args
-    l = [ INDENT, *args].join ""
-    puts l
-  end
-  puts "arguments:"
-  args.each { |a| puts_val a }.any?              or puts_val "(none)"
-  puts "parameters:"
-  @params.each { |k,v| puts_val k, "=", v }.any? or puts_val "(none)"
-  puts "block:"
-  self.class.constants.grep( /^RE(_[A-Z]+)?$/).each { |re|
-    v = self.class.const_get re
-    puts_val re, "=", v
-  }
-  puts_val @block
-  exit
-end
-
 if color_on $stderr then
   def show_error e
     $stderr.puts "\e[31m#{e.class}: \e[1m#{e}\e[m"
@@ -419,21 +312,128 @@ else
   end
 end
 
-@params[ :error] = proc do
-  case $!
-    when Errno::EPIPE         then raise
-    when NameError, TypeError then raise
-    else                           show_error $!
+def error_handle
+  if @verbose then
+    yield
+  else
+    begin
+      yield
+    rescue
+      show_error $!
+      exit 1
+    rescue NoMemoryError, ScriptError, SignalException
+      show_error $!
+      exit 2
+    end
   end
 end
 
-@block = <<EOT
+
+error_handle do
+
+  co = color_on $stdout
+  opath = co ? "cpath" : "path"
+  case @lines
+    when :plain then
+      @puts and @block = "( #@block ) and colsep #{opath}, $., $_"
+      @real and @block = "break if ~/\0/o ; #@block"
+      @block = "lines { |line,num| $_, $. = line, num ; #@block }"
+
+    when :grep then
+      RE = Regexp.new @block, @icase && Regexp::IGNORECASE
+      @block = "grep RE"
+      @block << ", true" if co
+      @binary or @block = "not binary? and #@block"
+
+    else
+      @block ||= if $*.last and not (File.exists? $*.last) then
+        $*.pop.dup
+      else
+        @puts ||= true
+        "true"
+      end
+      if @puts then
+        @block = "( #@block ) and "
+        @block << if @wd then
+          "spcsep stype+modes, user|#@wd, group|#@wd, size[#@wd], " +
+              "mtime.lsish, #{opath} + #{co ? 'carrow' : 'arrow'}.to_s"
+        else
+          "puts #{opath}"
+        end
+      end
+
+  end
+
+  if @skip then
+    RE_SKIP = Regexp.new @skip, File::ALT_SEPARATOR&&Regexp::IGNORECASE
+    @block.insert 0, "next if name =~ RE_SKIP ; "
+  end
+
+  if @demand then
+    RE_DEMAND = Regexp.new @demand, File::ALT_SEPARATOR&&Regexp::IGNORECASE
+    @block.insert 0, "next unless name =~ RE_DEMAND ; "
+  end
+
+  if @ext then
+    RE_EXT = Regexp.new '\A\.(' +
+      @ext.split(/ +|,/).map { |e| e[ /\A\.?(.*)\z/, 1] }.join('|') + ')\z',
+      File::ALT_SEPARATOR&&Regexp::IGNORECASE
+    @block.insert 0, "ext =~ RE_EXT or next ; "
+  end
+
+  @visible and @block.insert 0, "visible? or prune ; "
+
+  @vcs and @block.insert 0, "no_vcs ; "
+  @vim and @block.insert 0, "vimswap? and next ; "
+
+  args = $*.dup
+  if args.empty? and not $stdin.tty? then
+    $stdin.each_line { |l|
+      l.chomp!
+      args.push l
+    }
+  end
+
+  if @show then
+    class Proc
+      def to_s
+        "#<%s:0x%08x>" % [ self.class, object_id]
+      end
+    end
+    INDENT = " "*2
+    def puts_val *args
+      l = [ INDENT, *args].join ""
+      puts l
+    end
+    puts "arguments:"
+    args.each { |a| puts_val a }.any?              or puts_val "(none)"
+    puts "parameters:"
+    @params.each { |k,v| puts_val k, "=", v }.any? or puts_val "(none)"
+    puts "block:"
+    self.class.constants.grep( /^RE(_[A-Z]+)?$/).each { |re|
+      v = self.class.const_get re
+      puts_val re, "=", v
+    }
+    puts_val @block
+    exit
+  end
+
+  @params[ :error] = proc do
+    case $!
+      when Errno::EPIPE         then raise
+      when NameError, TypeError then raise
+      else                           show_error $!
+    end
+  end
+
+  @block = <<-EOT
 handle_error do
   #@block
 end
-EOT
+  EOT
 
-error_handle do
+  eval @blkbegin if @blkbegin
   RbFindX.open args, @params do |f| f.instance_eval @block end
+  eval @blkend   if @blkend
 end
 
