@@ -33,7 +33,8 @@ OPTIONS = [
   [ %w(--require   -r), :rb,  "require library"],
   [ %w(--fileutils -U), nil,  "include FileUtils module"],
   [ %w(--puts-path -p), nil,  "do 'puts path/cpath' on true block"],
-  [ %w(--ls-l      -P), nil,  "do \"ls -l\" style output on true block"],
+  [ %w(--ls-l      -P), nil,  "do 'ls -l' style output on true block"],
+  [ %w(--wider     -+), nil,  "widen fields in long output format (--ls-l)"],
   [ %w(--lines     -l), :blk, "surround block by 'lines { |$_,$.| ... }'"],
   [ %w(--reallines -L), :blk, "same as -l but stop at any null character"],
   [ %w(--grep      -g), :blk, "grep files (implies -pL)"],
@@ -257,6 +258,7 @@ end
 
 
 @params = {}
+@wd = 6
 
 opts = GetoptLong.new *OPTIONS.map { |(long,short),arg,|
   [long,short,(arg ? GetoptLong::REQUIRED_ARGUMENT : GetoptLong::NO_ARGUMENT)]
@@ -282,6 +284,7 @@ begin
       when '--fileutils' then require "fileutils" ; include FileUtils
       when '--puts-path' then @puts_path = true
       when '--ls-l'      then @puts_path = :long
+      when '--wider'     then @wd += 1
       when '--lines'     then @lines = :plain ;                 @block = arg
       when '--reallines' then @lines = :plain ; @real = true ;  @block = arg
       when '--grep'      then @lines = :grep  ;                 @block = arg
@@ -340,7 +343,7 @@ case @lines
     if @puts_path then
       @block = "( #@block ) and "
       @block << if @puts_path == :long then
-        "spcsep stype+modes, user|6, group|6, size[6], " +
+        "spcsep stype+modes, user|#@wd, group|#@wd, size[#@wd], " +
             "mtime.lsish, #{opath} + #{co ? 'carrow' : 'arrow'}.to_s"
       else
         "puts #{opath}"
