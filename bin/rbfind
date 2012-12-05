@@ -258,7 +258,6 @@ end
 
 
 @params = {}
-@wd = 6
 
 opts = GetoptLong.new *OPTIONS.map { |(long,short),arg,|
   [long,short,(arg ? GetoptLong::REQUIRED_ARGUMENT : GetoptLong::NO_ARGUMENT)]
@@ -279,12 +278,13 @@ begin
       when '--maxdepth'  then @params[ :max_depth] = arg
       when '--follow'    then @params[ :follow] = true
       when '--sort'      then @params[ :sort] = arg
-      when '--sort-by'   then @params[ :sort] = instance_eval "proc { |name| #{arg} }"
+      when '--sort-by'   then
+                    @params[ :sort] = instance_eval "proc { |name| #{arg} }"
       when '--require'   then require arg
       when '--fileutils' then require "fileutils" ; include FileUtils
-      when '--puts-path' then @puts_path = true
-      when '--ls-l'      then @puts_path = :long
-      when '--wider'     then @wd += 1
+      when '--puts-path' then @puts = true
+      when '--ls-l'      then @puts = true ; @wd = 6
+      when '--wider'     then @wd = @wd ? @wd.succ : 4
       when '--lines'     then @lines = :plain ;                 @block = arg
       when '--reallines' then @lines = :plain ; @real = true ;  @block = arg
       when '--grep'      then @lines = :grep  ;                 @block = arg
@@ -323,7 +323,7 @@ co = color_on $stdout
 opath = co ? "cpath" : "path"
 case @lines
   when :plain then
-    @puts_path and @block = "( #@block ) and colsep #{opath}, $., $_"
+    @puts and @block = "( #@block ) and colsep #{opath}, $., $_"
     @real and @block = "break if ~/\0/o ; #@block"
     @block = "lines { |line,num| $_, $. = line, num ; #@block }"
 
@@ -337,12 +337,12 @@ case @lines
     @block ||= if $*.last and not (File.exists? $*.last) then
       $*.pop.dup
     else
-      @puts_path ||= true
+      @puts ||= true
       "true"
     end
-    if @puts_path then
+    if @puts then
       @block = "( #@block ) and "
-      @block << if @puts_path == :long then
+      @block << if @wd then
         "spcsep stype+modes, user|#@wd, group|#@wd, size[#@wd], " +
             "mtime.lsish, #{opath} + #{co ? 'carrow' : 'arrow'}.to_s"
       else
