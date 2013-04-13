@@ -318,6 +318,19 @@ def error_handle
   else
     begin
       yield
+    rescue ArgumentError
+      show_error $!
+      if $!.message[ "invalid byte sequence"] then
+        puts <<-EOT
+Hint: Try to give me a different default encoding by changing
+the locale or by explicitly giving one.
+
+  $ LC_ALL="C" #$0 ...
+  $ ruby -E 'ascii-8bit' #$0 ...
+
+        EOT
+      end
+      exit 1
     rescue
       show_error $!
       exit 1

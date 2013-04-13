@@ -619,17 +619,11 @@ class RbFind
       else           raise "Illegal color spec: #{color}"
     end
     lines { |l,i|
-      begin
-        l =~ re or next
-        if color then
-          l = "#$`\e[#{color}m#$&\e[m#$'"
-        end
-        colsep @path, i, l
-      rescue ArgumentError
-        l.force_encoding "iso-8859-1"
-        l.encode! "utf-8"
-        retry
+      l =~ re or next
+      if color then
+        l = "#$`\e[#{color}m#$&\e[m#$'"
       end
+      colsep @path, i, l
     }
   end
 
