@@ -435,6 +435,7 @@ error_handle do
     case $!
       when Errno::EPIPE         then raise
       when NameError, TypeError then raise
+      when ArgumentError        then raise
       else                           show_error $!
     end
   end

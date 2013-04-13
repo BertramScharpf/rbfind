@@ -750,7 +750,16 @@ class RbFind
   def build_path
     @path = File.join @levels
     # File.expand_path will expand ~ which is not desired here.
-    @fullpath = if @path =~ RE_ABSOLUTE then
+    p = @path
+    abs = begin
+      p =~ RE_ABSOLUTE
+    rescue ArgumentError
+      # In case the encoding is causing trouble: We just want to
+      # know whether the first character is a path separator.
+      p = p[ 0, 1].force_encoding Encoding::ASCII_8BIT
+      retry
+    end
+    @fullpath = if abs then
       @path
     else
       File.join @wd, @path
