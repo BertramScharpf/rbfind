@@ -49,6 +49,7 @@ OPTIONS = [
   [ %w(--begin     -B), :blk, "eval block before begin"],
   [ %w(--end       -E), :blk, "eval block after end"],
   [ %w(--file      -f), :blk, "read block expression from file"],
+  [ %w(--encoding  -K), :str, "encoding extern[:intern] (same as ruby -E)"],
 ]
 
 def usage
@@ -185,6 +186,16 @@ class NilClass
   def |  width ; " "*width ; end
 end
 
+
+def set_encoding extern, intern = nil
+  Encoding.default_external = extern unless extern.nil? || extern.empty?
+  Encoding.default_internal = intern unless intern.nil? || intern.empty?
+  [ $stdin, $stdout, $stderr].each do |io|
+    io.set_encoding extern, intern
+  end
+end
+
+
 class RbFindX < RbFind
 
   # Alias the question marks away from all method names because
@@ -282,6 +293,7 @@ begin
       when '--begin'     then @blkbegin = arg
       when '--end'       then @blkend   = arg
       when '--file'      then @block = File.read arg
+      when '--encoding'  then e, i = arg.split ":" ; set_encoding e, i
     end
   end
 rescue GetoptLong::InvalidOption
@@ -322,11 +334,11 @@ def error_handle
       show_error $!
       if $!.message[ "invalid byte sequence"] then
         puts <<-EOT
-Hint: Try to give me a different default encoding by changing
-the locale or by explicitly giving one.
+Hint: Try to give me a different default encoding by explicitly giving one or
+by changing the locale.
 
-  $ LC_ALL="C" #$0 ...
-  $ ruby -E 'ascii-8bit' #$0 ...
+  $ rbfind -K ascii-8bit ...
+  $ LC_ALL="C" rbfind ...
 
         EOT
       end
