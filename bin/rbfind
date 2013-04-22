@@ -333,7 +333,7 @@ def error_handle
     rescue ArgumentError
       show_error $!
       if $!.message[ "invalid byte sequence"] then
-        puts <<-EOT
+        $stderr.puts <<-EOT
 Hint: Try to give me a different default encoding by explicitly giving one or
 by changing the locale.
 
