@@ -241,7 +241,7 @@ class Dir
   #
   # All entries except "." and "..".
   #
-  def entries!
+  method_defined? :entries! or def entries!
     entries - SPECIAL_DIRS
   end
 
