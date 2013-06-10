@@ -109,7 +109,7 @@ class Time
               (year == Time.now.year ? "%H:%M:%S" : "%Y    ")
   end
 
-  # Windows hat kein "%e"!
+  # Windows has no "%e".
   PERC_DAY = Time.now.strftime("%e") =~ /\d/ ? "%e" : "%d"   # :nodoc:
 
 end
