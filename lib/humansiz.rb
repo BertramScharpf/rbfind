@@ -5,7 +5,7 @@
 
 =begin rdoc
 
-Human readable sizes and times.
+Human readable sizes, times, and modes.
 
 Examples:
 
@@ -112,5 +112,18 @@ class Time
   # Windows hat kein "%e"!
   PERC_DAY = Time.now.strftime("%e") =~ /\d/ ? "%e" : "%d"   # :nodoc:
 
+end
+
+
+class Integer
+  def hex
+    to_s 0x10
+  end
+  def oct
+    to_s 010
+  end
+  def bin
+    to_s 0b10
+  end
 end
 
