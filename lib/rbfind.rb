@@ -305,9 +305,11 @@ class RbFind
     end
   end
 
-  def name     ; @levels.last ; end
-  def path     ; @path        ; end
-  def fullpath ; @fullpath    ; end
+  def name     ; @levels.last    ; end
+  def path     ; @path           ; end
+  def fullpath ; @fullpath       ; end
+  def parts    ; @levels         ; end
+  def reverse  ; @levels.reverse ; end
 
   def dirname
     @dirname ||= File.dirname @path
