@@ -293,10 +293,11 @@ class RbFind
     end
     @do_level = method dl||:do_level
 
-    @wd, @start = Dir.getwd, Time.now
-    @count = 0
+    @start, @count = Time.now, 0
+    @wd = Dir.getwd
     if path then
       File.lstat path
+      @wd = nil unless absolute_path? path
       @levels.push path
       walk
     else
@@ -305,14 +306,13 @@ class RbFind
     end
   end
 
-  def name     ; @levels.last    ; end
-  def path     ; @path           ; end
-  def fullpath ; @fullpath       ; end
-  def parts    ; @levels         ; end
-  def reverse  ; @levels.reverse ; end
+  def name     ; @levels.last ; end
+  def path     ; @path        ; end
+  def fullpath ; @fullpath    ; end
 
   def dirname
-    @dirname ||= File.dirname @path
+    d = File.dirname @fullpath
+    File.basename d
   end
 
   def ext         ; File.extname name ; end
@@ -742,29 +742,21 @@ class RbFind
     end
   end
 
-  # :stopdoc:
-  RE_ABSOLUTE = File::ALT_SEPARATOR ?
-    /\A([A-Z]:)?
-      [#{Regexp.quote File::SEPARATOR}#{Regexp.quote File::ALT_SEPARATOR}]/ix :
-    /\A#{Regexp.quote File::SEPARATOR}/
-  # :startdoc:
+  def absolute_path? p
+    loop do
+      q = File.dirname p
+      break if q == p
+      p = q
+    end
+    p != Dir::CUR_DIR
+  end
 
   def build_path
     @path = File.join @levels
-    # File.expand_path will expand ~ which is not desired here.
-    p = @path
-    abs = begin
-      p =~ RE_ABSOLUTE
-    rescue ArgumentError
-      # In case the encoding is causing trouble: We just want to
-      # know whether the first character is a path separator.
-      p = p[ 0, 1].force_encoding Encoding::ASCII_8BIT
-      retry
-    end
-    @fullpath = if abs then
-      @path
-    else
+    @fullpath = if @wd then
       File.join @wd, @path
+    else
+      @path
     end
     if @path.empty? then @path = Dir::CUR_DIR end
   end
@@ -774,7 +766,6 @@ class RbFind
     build_path
     @count += 1
     @do_level.call
-    @dirname = nil
   end
 
   def do_level
