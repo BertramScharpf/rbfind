@@ -156,15 +156,24 @@ class Time
 end
 
 
-class Fixnum
+class Integer
   # convenient formatting, right justification
-  def [] width
-    "%#{width.to_i}d" % self
+  def method_missing sym, *args
+    case sym.to_s   # .to_s for Ruby 1.8
+      when /\Aw_?(\d+)/ then "%#{$1}d" % self
+      else                   super
+    end
   end
 end
 
 class String
   # convenient formatting, left justification
+  def method_missing sym, *args
+    case sym.to_s   # .to_s for Ruby 1.8
+      when /\Aw_?(\d+)/ then ljust $1.to_i
+      else                   super
+    end
+  end
   def | width
     ljust width
   end
@@ -380,7 +389,7 @@ error_handle do
       if @puts then
         @block = "( #@block ) and "
         @block << if @wd then
-          "spcsep stype+modes, user|#@wd, group|#@wd, size[#@wd], " +
+          "spcsep stype+modes, user|#@wd, group|#@wd, size.w#@wd, " +
               "mtime.lsish, #{opath} + #{co ? 'carrow' : 'arrow'}.to_s"
         else
           "puts #{opath}"
