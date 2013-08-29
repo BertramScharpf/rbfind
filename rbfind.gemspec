@@ -15,11 +15,13 @@ Files may be examined using Ruby expressions.
 Full ls-style output support including color.
 Full grep-style output support.
 EOT
+  s.license           = "BSD"
   s.authors           = [ "Bertram Scharpf"]
   s.email             = "<software@bertram-scharpf.de>"
   s.homepage          = "http://www.bertram-scharpf.de"
+
   s.requirements      = "just Ruby"
-  s.has_rdoc          = true
+
   s.extensions        = %w(
                           Rakefile
                         )
@@ -30,6 +32,8 @@ EOT
   s.executables       = %w(
                           rbfind
                         )
+
+  s.has_rdoc          = true
   s.extra_rdoc_files  = %w(
                           LICENSE
                         )
