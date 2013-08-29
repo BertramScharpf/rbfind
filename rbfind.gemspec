@@ -6,7 +6,7 @@ require "./lib/rbfind"
 
 Gem::Specification.new do |s|
   s.name              = "rbfind"
-  s.rubyforge_project = "rbfind"
+  s.rubyforge_project = "NONE"
   s.version           = RbFind::VERSION
   s.summary           = "Ruby replacement for the standard Unix find tool"
   s.description       = <<EOT
