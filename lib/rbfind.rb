@@ -1,16 +1,52 @@
 #
 #  rbfind.rb  --  Find replacement with many features
 #
-# * See the README file for the documentation of the command line tool.
-# * See the RbFind for the class reference.
-#
 
-# Author: Bertram Scharpf <software@bertram-scharpf.de>
-# License: BSD
+# :stopdoc:
+unless String.public_method_defined? :ord then
+  class String ; def ord ; self[0].ord ; end ; end
+end
+# :startdoc:
+
+class Dir
+
+  SPECIAL_DIRS = %w(. ..)
+  CUR_DIR, SUPER_DIR = *SPECIAL_DIRS
+
+  # :call-seq:
+  #    each!() { |e| ... }    -> self
+  #
+  # Call block for all entries except "." and "..".
+  #
+  def each!
+    s = SPECIAL_DIRS.dup
+    each { |f|
+      next if s.delete f
+      yield f
+    }
+  end
+
+  # :call-seq:
+  #    entries!()     -> ary
+  #
+  # All entries except "." and "..".
+  #
+  method_defined? :entries! or def entries!
+    entries - SPECIAL_DIRS
+  end
+
+end
+
+
 
 =begin rdoc
 
-= Usage
+== Usage
+
+See the README file or "rbfind -h" for a documentation of the command line
+tool.
+
+In Ruby programs, you may call:
 
   RbFind.open                do |f| puts f.path end
   RbFind.open "dir"          do |f| puts f.path end
@@ -22,8 +58,7 @@
   RbFind.run       do puts path end
   RbFind.run "dir" do puts path end
 
-
-= File properties
+== File properties
 
   f.name          # file name (*)
   f.path          # file path relative to working directory (*)
@@ -96,7 +131,7 @@ Derivated from stat:
     f.filesize { |s| s > 1024 }   # returns block result for files
 
 
-= Actions
+== Actions
 
     f.prune   # do not descend directory; abort current entry
     f.novcs   # omit .svn, CVS and .git directories
@@ -114,7 +149,7 @@ Derivated from stat:
     f.rename newname   # rename, but leave it in the same directory
 
 
-= Color support
+== Color support
 
     f.cname       # colorized name
     f.cpath       # colorized path
@@ -160,7 +195,7 @@ Derivated from stat:
     f.suffix      # ls-like suffixes |@=/%* for pipe, ..., executable
 
 
-= Examples
+== Examples
 
 Find them all:
 
@@ -212,44 +247,9 @@ Sort without case sensitivity and preceding dot:
 
 =end
 
-# :stopdoc:
-unless String.public_method_defined? :ord then
-  class String ; def ord ; self[0].ord ; end ; end
-end
-# :startdoc:
-
-class Dir
-
-  SPECIAL_DIRS = %w(. ..)
-  CUR_DIR, SUPER_DIR = *SPECIAL_DIRS
-
-  # :call-seq:
-  #    each!() { |e| ... }    -> self
-  #
-  # Call block for all entries except "." and "..".
-  #
-  def each!
-    s = SPECIAL_DIRS.dup
-    each { |f|
-      next if s.delete f
-      yield f
-    }
-  end
-
-  # :call-seq:
-  #    entries!()     -> ary
-  #
-  # All entries except "." and "..".
-  #
-  method_defined? :entries! or def entries!
-    entries - SPECIAL_DIRS
-  end
-
-end
-
 class RbFind
 
-  VERSION = "1.3"
+  VERSION = "1.3.1"
 
   class <<self
     private :new
