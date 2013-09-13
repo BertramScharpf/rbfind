@@ -249,7 +249,7 @@ Sort without case sensitivity and preceding dot:
 
 class RbFind
 
-  VERSION = "1.3.1"
+  VERSION = "1.3.2.a"
 
   class <<self
     private :new
@@ -518,6 +518,7 @@ class RbFind
     end
   end
 
+  autoload :Etc, "etc"
 
   # :call-seq:
   #    user()   -> str
@@ -526,7 +527,7 @@ class RbFind
   #
   def user
     u = stat.uid
-    (etc.getpwuid u).name rescue u.to_s
+    (Etc.getpwuid u).name rescue u.to_s
   end
   alias owner user
 
@@ -537,7 +538,7 @@ class RbFind
   #
   def group
     g = stat.gid
-    (etc.getgrgid g).name rescue g.to_s
+    (Etc.getgrgid g).name rescue g.to_s
   end
 
 
@@ -877,12 +878,6 @@ class RbFind
     #     when ".png", /\.jpe?g$/, /\.tiff?$/ then 15
     #     when /\.tar\.(gz|bz2)$/             then 16
     #   end
-  end
-
-  def etc
-    Etc
-  rescue NameError
-    require "etc" and retry
   end
 
   class <<self
