@@ -18,7 +18,7 @@ EOT
   s.license           = "BSD"
   s.authors           = [ "Bertram Scharpf"]
   s.email             = "<software@bertram-scharpf.de>"
-  s.homepage          = "http://www.bertram-scharpf.de"
+  s.homepage          = "http://www.bertram-scharpf.de/software/rbfind"
 
   s.requirements      = "just Ruby"
 
@@ -34,9 +34,9 @@ EOT
                         )
 
   s.has_rdoc          = true
+  s.rdoc_options.concat %w(--charset utf-8 --main README)
   s.extra_rdoc_files  = %w(
                           LICENSE
                         )
-  s.rdoc_options.concat %w(--charset utf-8 --main README README)
 end
 
