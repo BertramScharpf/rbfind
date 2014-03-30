@@ -108,17 +108,17 @@ Examples:
   $ rbfind /etc 'readable? or raise "Access denied: #{path}" ;
   >              lines { |l,| l["192.168."] and (puts path ; break) }'
 
-  $ rbfind 'col_sep stype+modes, size[10], path'
-  $ rbfind 'tab_sep stype+modes, size[10], path'
+  $ rbfind 'col_sep stype+modes, size.w10, path'
+  $ rbfind 'tab_sep stype+modes, size.w10, path'
   $ rbfind 'spc_sep stype+modes, size.to_h, user, group, mtime.lsish, path'
   $ rbfind 'spacesep stype+modes, size.to_h, user, group, mtime.lsish, path'
   $ rbfind 'spacesep stype+modes, size.to_h, user, group, mtime!, path'
   $ rbfind 'spacesep stype+modes, size.to_h, user, group, mtime.i, path'
   $ rbfind 'spacesep mtime.u, path'
-  $ rbfind 'spacesep modes, user|8, group|8, size[8], cpath + carrow.to_s'
+  $ rbfind 'spacesep modes, user.w8, group.w8, size.w8, cpath + carrow.to_s'
 
-  $ rbfind 'spacesep digest_md5, size[8], path'
-  $ rbfind 'spacesep digest_sha256, size[8], path'
+  $ rbfind 'spacesep digest_md5, size.w8, path'
+  $ rbfind 'spacesep digest_sha256, size.w8, path'
 
   $ rbfind 'rename name.downcase'
   $ rbfind 'ext == ".tgz" and rename without_ext+".tar.gz"'
@@ -191,8 +191,12 @@ class NilClass
   def >= oth ; false ; end
   def between? min, max ; false ; end
 
-  def [] width ; " "*width ; end
-  def |  width ; " "*width ; end
+  def method_missing sym, *args
+    case sym.to_s   # .to_s for Ruby 1.8
+      when /\Aw_?(\d+)/ then " "*$1.to_i
+      else                   super
+    end
+  end
 end
 
 
