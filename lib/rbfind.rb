@@ -588,13 +588,23 @@ class RbFind
   end
 
   # :call-seq:
-  #    read( n = nil)    -> str or nil
+  #    read( n = nil)               -> str or nil
+  #    read( n = nil) { |b| ... }   -> nil
   #
-  # Read the first <code>n</code> bytes or return <code>nil</code>
-  # for others that regular files. <code>nil</code> reads to end of file.
+  # Read the first +n+ bytes or return +nil+ for others than regular
+  # files. +nil+ reads to end of file. If a block is given, chonks of
+  # +n+ bytes (or all) will be yielded.
   #
   def read n = nil
-    open { |o| o.read n }
+    open { |o|
+      if block_given? then
+        while (r = o.read n) do
+          yield r
+        end
+      else
+        o.read n
+      end
+    }
   end
 
   # :call-seq:

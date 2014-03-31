@@ -246,14 +246,16 @@ class RbFindX < RbFind
     case sym.to_s
       when /\Adigest_(.*)/, /\A([a-z]+[0-9]+)\z/ then
         m = $1
-        c = m.upcase
-        begin
-          (Digest.const_get c).hexdigest read
+        d = begin
+          Digest.const_get m.upcase
         rescue NameError
           if m =~ /sha\d\d\d/ then m = "sha2" end
           require "digest/#{m}" and retry
           raise
         end
+        e = d.new
+        read 0x1000_0000 do |b| e.update b end
+        e.hexdigest
       when /\A([amc]time)!\z/ then
         (send $1).strftime "%Y-%m-%d %H:%M:%S %z"
       else
