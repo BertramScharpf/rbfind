@@ -6,7 +6,6 @@ require "./lib/rbfind"
 
 Gem::Specification.new do |s|
   s.name              = "rbfind"
-  s.rubyforge_project = "NONE"
   s.version           = RbFind::VERSION
   s.summary           = "Ruby replacement for the standard Unix find tool"
   s.description       = <<EOT
@@ -23,9 +22,9 @@ EOT
   s.requirements      = "just Ruby"
 
   s.extensions        = %w(
-                          Rakefile
                         )
   s.files             = %w(
+                          README
                           lib/rbfind.rb
                           lib/humansiz.rb
                         )
