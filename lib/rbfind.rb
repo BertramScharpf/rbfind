@@ -615,10 +615,11 @@ class RbFind
     block_given? or return lines do end
     open { |file|
       n = 0
-      file.each_line { |line|
+      file.each_line { |l|
+        l.chomp!
         n += 1
-        line.chomp!
-        yield line, n
+        set_predefs l, n
+        yield l, n
       }
       n
     }
@@ -780,7 +781,7 @@ class RbFind
 
   def do_level
     begin
-      @block.call self
+      call_block
     rescue Prune
       return
     end
@@ -795,10 +796,21 @@ class RbFind
       @path, @fullpath = path, fullpath
     end
     begin
-      @block.call self
+      call_block
     rescue Prune
       raise RuntimeError, "#{self.class}: prune doesn't work with :depth."
     end
+  end
+
+  def call_block
+    set_predefs name, count
+    @block.call self
+  end
+
+  def set_predefs l, n
+    b = @block.binding
+    b.local_variable_set "_", [ l, n]
+    b.eval "$_, $. = *_"
   end
 
   def read_dir

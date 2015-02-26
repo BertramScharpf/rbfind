@@ -375,9 +375,9 @@ error_handle do
   opath = co ? "cpath" : "path"
   case @lines
     when :plain then
-      @puts and @block = "( #@block ) and colsep #{opath}, $., $_"
+      @puts and @block = "( #@block ) and colsep #{opath}, num, line"
       @real and @block = "break if ~/\0/o ; #@block"
-      @block = "lines { |line,num| $_, $. = line, num ; #@block }"
+      @block = "lines { |line,num| #@block }"
 
     when :grep then
       RE = Regexp.new @block, @icase && Regexp::IGNORECASE
