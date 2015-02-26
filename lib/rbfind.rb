@@ -249,7 +249,7 @@ Sort without case sensitivity and preceding dot:
 
 class RbFind
 
-  VERSION = "1.4".freeze
+  VERSION = "1.5".freeze
 
   class <<self
     private :new
