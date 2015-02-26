@@ -209,7 +209,7 @@ def set_encoding extern, intern = nil
 end
 
 
-class RbFindX < RbFind
+class RbFindApp < RbFind
 
   # Alias the question marks away from all method names because
   # they're a nuisance on the command line.
@@ -474,7 +474,7 @@ end
   EOT
 
   eval @blkbegin if @blkbegin
-  RbFindX.open args, @params do |f| f.instance_eval @block end
+  RbFindApp.open args, @params do |f| f.instance_eval @block end
   eval @blkend   if @blkend
 end
 
