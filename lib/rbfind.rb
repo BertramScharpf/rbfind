@@ -259,12 +259,13 @@ class RbFind
       end
       args.flatten!
       if args.any? then
-        args.inject 0 do |count,path|
-          f = new path, params, &block
-          count + f.count
+        count = 0
+        args.each do |path|
+          f = new path, count, params, &block
+          count = f.count
         end
       else
-        f = new nil, params, &block
+        f = new nil, 0, params, &block
         f.count
       end
     end
@@ -275,17 +276,15 @@ class RbFind
 
   attr_reader :count, :wd, :start
 
-  def initialize path, params = nil, &block
+  def initialize path, count, params = nil, &block
     @levels = []
     @block = block
 
     if params then
       params = params.dup
       dl = :do_level_depth if params.delete :depth
-      md = params.delete :max_depth
-      @max_depth = md.to_i if md
-      st = params.delete :sort
-      @sort = sort_parser st
+      md = params.delete :max_depth ; @max_depth = md.to_i if md
+      st = params.delete :sort ; @sort = sort_parser st
       @follow = params.delete :follow
       @error = params.delete :error
       params.empty?  or
@@ -293,7 +292,7 @@ class RbFind
     end
     @do_level = method dl||:do_level
 
-    @start, @count = Time.now, 0
+    @start, @count = Time.now, count
     @wd = Dir.getwd
     if path then
       File.lstat path
