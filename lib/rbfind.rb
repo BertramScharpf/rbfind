@@ -63,6 +63,8 @@ In Ruby programs, you may call:
   f.name          # file name (*)
   f.path          # file path relative to working directory (*)
   f.fullpath      # full file path (*)
+  f.path!         # directories with a slash appended (*)
+  f.fullpath!     # directories with a slash appended (*)
   f.dirname       # dirname of path
   f.ext           # file name extension
   f.without_ext   # file name without extension
@@ -153,7 +155,9 @@ Derivated from stat:
 
     f.cname       # colorized name
     f.cpath       # colorized path
+    f.cpath!      # colorized path!
     f.cfullpath   # colorized fullpath
+    f.cfullpath!  # colorized fullpath!
     f.creadlink   # colored symlink pointer
     f.carrow      # colored "-> symlink" suffix
 
@@ -305,9 +309,17 @@ class RbFind
     end
   end
 
-  def name     ; @levels.last ; end
-  def path     ; @path        ; end
-  def fullpath ; @fullpath    ; end
+  private
+
+  def append_slash s ; (File.directory? s) ? "#{s}/" : s ; end
+
+  public
+
+  def name      ; @levels.last ; end
+  def path      ; @path        ; end
+  def fullpath  ; @fullpath    ; end
+  def path!     ; append_slash @path     ; end
+  def fullpath! ; append_slash @fullpath ; end
 
   def dirname
     d = File.dirname @fullpath
@@ -446,9 +458,11 @@ class RbFind
   end
 
 
-  def cname     ; color name     ; end
-  def cpath     ; color path     ; end
-  def cfullpath ; color fullpath ; end
+  def cname      ; color name      ; end
+  def cpath      ; color path      ; end
+  def cfullpath  ; color fullpath  ; end
+  def cpath!     ; color path!     ; end
+  def cfullpath! ; color fullpath! ; end
 
   def color arg
     col_stat arg, stat

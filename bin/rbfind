@@ -372,7 +372,7 @@ end
 error_handle do
 
   co = color_on $stdout
-  opath = co ? "cpath" : "path"
+  opath = co ? "cpath!" : "path!"
   case @lines
     when :plain then
       @puts and @block = "( #@block ) and colsep #{opath}, num, line"
