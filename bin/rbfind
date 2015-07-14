@@ -269,6 +269,8 @@ end
 
 @params = {}
 
+envopts = ENV[ "RBFIND_OPTIONS"]
+$*.unshift *envopts.split if envopts
 opts = GetoptLong.new *OPTIONS.map { |(long,short),arg,|
   [long,short,(arg ? GetoptLong::REQUIRED_ARGUMENT : GetoptLong::NO_ARGUMENT)]
 }
