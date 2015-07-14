@@ -311,7 +311,7 @@ class RbFind
 
   private
 
-  def append_slash s ; (File.directory? s) ? "#{s}/" : s ; end
+  def append_slash s ; (File.directory? s) ? (File.join s, "") : s ; end
 
   public
 
