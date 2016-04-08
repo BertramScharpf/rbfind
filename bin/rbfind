@@ -353,11 +353,15 @@ def error_handle
       show_error $!
       if $!.message[ "invalid byte sequence"] then
         $stderr.puts <<-EOT
-Hint: Try to give me a different default encoding by explicitly giving one or
+Hint: Try to give a different default encoding by explicitly setting one or
 by changing the locale.
 
   $ rbfind -K ascii-8bit ...
   $ LC_ALL="C" rbfind ...
+
+Alternatively, you may prefer to scrub the invalid encodings yourself.
+
+  $ rbfind -P 'name.scrub =~ /Fu.ball/'
 
         EOT
       end

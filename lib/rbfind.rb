@@ -58,6 +58,7 @@ In Ruby programs, you may call:
   RbFind.run       do puts path end
   RbFind.run "dir" do puts path end
 
+
 == File properties
 
   f.name          # file name (*)
@@ -199,6 +200,29 @@ Derivated from stat:
     f.suffix      # ls-like suffixes |@=/%* for pipe, ..., executable
 
 
+== Encoding issues
+
+Ruby raises an ArgumentError if, for example, an ISO8859-1-encoded
+string gets read in as UTF-8-encoded and then is matched against a
+UTF-8-encoded regular expression. This will happen if you are
+running RbFind from an environment with something like
+LC_ALL="de_DE.UTF-8" and if you are searching directories containing
+single-byte encoded file names or files with single-byte or binary
+content.
+
+The #grep facility will will condone encoding mismatches by calling
+the String#scrub! method. But neither the #lines and #read function
+will do any transformation nor will the file names and the path
+specifications be changed.
+
+In short, if you are using the #grep method, or the -g option on the
+command line you will not need to care about encoding problems. On
+the other hand, if you specify the =~ operator, you will be
+responsible for calling the String#scrub method yourself. Please do
+not try to call the String#scrub! (bang) method for the name and path
+variables because these will be used in the further processing.
+
+
 == Examples
 
 Find them all:
@@ -253,7 +277,7 @@ Sort without case sensitivity and preceding dot:
 
 class RbFind
 
-  VERSION = "1.6".freeze
+  VERSION = "1.7".freeze
 
   class <<self
     private :new
@@ -646,6 +670,7 @@ class RbFind
       else           raise "Illegal color spec: #{color}"
     end
     lines { |l,i|
+      l.scrub!
       l =~ re or next
       if color then
         l = "#$`\e[#{color}m#$&\e[m#$'"
@@ -742,8 +767,9 @@ class RbFind
     nb = File.basename newname
     newname == nb or raise RuntimeError,
           "#{self.class}: rename to `#{newname}' may not be a path."
+    nb.freeze
     @levels.pop
-    @levels.push newname
+    @levels.push nb
     build_path
     File.rename p, @path
     nil
@@ -784,6 +810,8 @@ class RbFind
       @path
     end
     if @path.empty? then @path = Dir::CUR_DIR end
+    @fullpath.freeze
+    @path.freeze
   end
 
   def walk
@@ -853,6 +881,7 @@ class RbFind
       dir.reverse! if @sort < 0
     end
     dir.each { |f|
+      f.freeze
       begin
         @levels.push f
         walk
