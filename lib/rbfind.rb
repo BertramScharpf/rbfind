@@ -721,7 +721,7 @@ class RbFind
   # Git directory.
   #
   def novcs
-    prune if %w(CVS .svn .git).include? name
+    prune if %w(CVS .svn .git .hg .fslckout).include? name
   end
   alias no_vcs novcs
 
