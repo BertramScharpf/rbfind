@@ -277,7 +277,7 @@ Sort without case sensitivity and preceding dot:
 
 class RbFind
 
-  VERSION = "1.7.1".freeze
+  VERSION = "1.8".freeze
 
   class <<self
     private :new
@@ -323,6 +323,7 @@ class RbFind
     @start, @count = Time.now, count
     @wd = Dir.getwd
     if path then
+      @max_depth += 1 if @max_depth
       File.lstat path
       @wd = nil unless absolute_path? path
       @levels.push path
