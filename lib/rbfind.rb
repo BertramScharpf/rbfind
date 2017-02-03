@@ -210,7 +210,7 @@ LC_ALL="de_DE.UTF-8" and if you are searching directories containing
 single-byte encoded file names or files with single-byte or binary
 content.
 
-The #grep facility will will condone encoding mismatches by calling
+The #grep facility will condone encoding mismatches by calling
 the String#scrub! method. But neither the #lines and #read function
 will do any transformation nor will the file names and the path
 specifications be changed.
