@@ -277,7 +277,7 @@ Sort without case sensitivity and preceding dot:
 
 class RbFind
 
-  VERSION = "1.8".freeze
+  VERSION = "1.8.1".freeze
 
   class <<self
     private :new
@@ -636,8 +636,12 @@ class RbFind
   def read n = nil
     open { |o|
       if block_given? then
-        while (r = o.read n) do
-          yield r
+        if n then
+          while (r = o.read n) do
+            yield r
+          end
+        else
+          yield o.read
         end
       else
         o.read n
