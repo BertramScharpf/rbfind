@@ -264,6 +264,10 @@ class RbFindApp < RbFind
     end
   end
 
+  def hide_instance_eval
+    instance_eval yield
+  end
+
 end
 
 
@@ -484,7 +488,7 @@ end
   EOT
 
   eval @blkbegin if @blkbegin
-  RbFindApp.open args, @params do |f| f.instance_eval @block end
+  RbFindApp.open args, @params do |f| f.hide_instance_eval { @block } end
   eval @blkend   if @blkend
 end
 
