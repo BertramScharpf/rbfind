@@ -47,6 +47,7 @@ OPTIONS = [
   [ %w(--demand    -D), :lst, "skip all filenames but these"],
   [ %w(--ext       -e), :lst, "skip all filename extensions but these"],
   [ %w(--visible   -I), nil,  "skip all hidden (starting with .dot)"],
+  [ %w(--nodirs    -N), nil,  "skip directories"],
   [ %w(--begin     -B), :blk, "eval block before begin"],
   [ %w(--end       -E), :blk, "eval block after end"],
   [ %w(--file      -f), :blk, "read block expression from file"],
@@ -313,6 +314,7 @@ begin
       when '--demand'    then @demand = arg
       when '--ext'       then @ext = arg
       when '--visible'   then @visible = true
+      when '--nodirs'    then @nodirs = true
       when '--begin'     then @blkbegin = arg
       when '--end'       then @blkend   = arg
       when '--file'      then @block = File.read arg
@@ -436,6 +438,8 @@ error_handle do
   end
 
   @visible and @block.insert 0, "visible? or prune ; "
+
+  @nodirs and @block.insert 0, "next if dir? ; "
 
   @vcs and @block.insert 0, "no_vcs ; "
   @vim and @block.insert 0, "vimswap? and next ; "

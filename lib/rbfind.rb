@@ -277,7 +277,7 @@ Sort without case sensitivity and preceding dot:
 
 class RbFind
 
-  VERSION = "1.8.1".freeze
+  VERSION = "1.9".freeze
 
   class <<self
     private :new
@@ -925,7 +925,7 @@ class RbFind
       when 010 then
         col_type or \
         if (m & 0111).nonzero? then
-          if (m & 04000).nonzero? then     9
+          if    (m & 04000).nonzero? then  9
           elsif (m & 02000).nonzero? then 10
           else                             6
           end
