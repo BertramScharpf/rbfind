@@ -37,6 +37,13 @@ class Dir
 
 end
 
+class File
+  class Stat
+    def same? oth
+      dev == oth.dev and ino == oth.ino
+    end
+  end
+end
 
 
 =begin rdoc
@@ -277,7 +284,7 @@ Sort without case sensitivity and preceding dot:
 
 class RbFind
 
-  VERSION = "1.9".freeze
+  VERSION = "1.10".freeze
 
   class <<self
     private :new
@@ -319,6 +326,9 @@ class RbFind
         raise RuntimeError, "Unknown parameter(s): #{params.keys.join ','}."
     end
     @do_level = method dl||:do_level
+
+    @ostat = $stdout.stat
+    @ostat = nil unless @ostat.file?
 
     @start, @count = Time.now, count
     @wd = Dir.getwd
@@ -620,6 +630,9 @@ class RbFind
   # nothing will be done.
   #
   def open &block
+    if @ostat and (s = File.stat @path).same? @ostat then
+      raise "Refusing to open output file."
+    end
     handle_error Errno::EACCES do
       File.open @path, &block if file?
     end

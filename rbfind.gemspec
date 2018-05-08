@@ -14,7 +14,7 @@ Files may be examined using Ruby expressions.
 Full ls-style output support including color.
 Full grep-style output support.
 EOT
-  s.license           = "BSD"
+  s.license           = "BSD-2-Clause"
   s.authors           = [ "Bertram Scharpf"]
   s.email             = "<software@bertram-scharpf.de>"
   s.homepage          = "http://www.bertram-scharpf.de/software/rbfind"
