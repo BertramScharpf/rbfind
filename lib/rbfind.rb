@@ -669,15 +669,16 @@ class RbFind
   #
   def lines
     block_given? or return lines do end
+    r = false
     open { |file|
       n = 0
       file.each_line { |l|
         l.chomp!
         n += 1
         set_predefs l, n
-        yield l, n
+        r ||= true if yield l, n
       }
-      n
+      r
     }
   end
 
@@ -694,6 +695,7 @@ class RbFind
         l = "#$`\e[#{color}m#$&\e[m#$'"
       end
       colsep @path, i, l
+      true
     }
   end
 
