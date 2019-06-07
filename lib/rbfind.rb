@@ -284,7 +284,7 @@ Sort without case sensitivity and preceding dot:
 
 class RbFind
 
-  VERSION = "1.10".freeze
+  VERSION = "1.11".freeze
 
   class <<self
     private :new
@@ -776,6 +776,7 @@ class RbFind
   alias spc_sep spcsep
   alias space_sep spc_sep
   alias spacesep spcsep
+  alias p spcsep
 
   def csv sep, *args
     e = args.join sep
