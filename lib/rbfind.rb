@@ -2,23 +2,12 @@
 #  rbfind.rb  --  Find replacement with many features
 #
 
-# :stopdoc:
-unless String.public_method_defined? :ord then
-  class String ; def ord ; self[0].ord ; end ; end
-end
-# :startdoc:
-
 class Dir
 
   SPECIAL_DIRS = %w(. ..)
   CUR_DIR, SUPER_DIR = *SPECIAL_DIRS
 
-  # :call-seq:
-  #    each!() { |e| ... }    -> self
-  #
-  # Call block for all entries except "." and "..".
-  #
-  def each!
+  method_defined? :each_child or def each_child
     s = SPECIAL_DIRS.dup
     each { |f|
       next if s.delete f
@@ -26,12 +15,7 @@ class Dir
     }
   end
 
-  # :call-seq:
-  #    entries!()     -> ary
-  #
-  # All entries except "." and "..".
-  #
-  method_defined? :entries! or def entries!
+  method_defined? :children or def children
     entries - SPECIAL_DIRS
   end
 
@@ -39,7 +23,8 @@ end
 
 class File
   class Stat
-    def same? oth
+    def identical? oth
+      oth = self.class.new oth unless self.class === oth
       dev == oth.dev and ino == oth.ino
     end
   end
@@ -213,7 +198,7 @@ Ruby raises an ArgumentError if, for example, an ISO8859-1-encoded
 string gets read in as UTF-8-encoded and then is matched against a
 UTF-8-encoded regular expression. This will happen if you are
 running RbFind from an environment with something like
-LC_ALL="de_DE.UTF-8" and if you are searching directories containing
+LANG="de_DE.UTF-8" and if you are searching directories containing
 single-byte encoded file names or files with single-byte or binary
 content.
 
@@ -597,7 +582,7 @@ class RbFind
   # +nil+ is returned.
   #
   def empty?
-    read_dir.each! { |f| return false }
+    read_dir.each_child { |f| return false }
     true
   rescue Errno::ENOTDIR
   end
@@ -619,9 +604,10 @@ class RbFind
   # +nil+ is returned.
   #
   def entries
-    read_dir.entries!
+    read_dir.children
   rescue Errno::ENOTDIR
   end
+  alias children entries
 
   # :call-seq:
   #    open() { |h| ... }    -> obj
@@ -630,7 +616,7 @@ class RbFind
   # nothing will be done.
   #
   def open &block
-    if @ostat and (s = File.stat @path).same? @ostat then
+    if @ostat and @ostat.identical? @path then
       raise "Refusing to open output file."
     end
     handle_error Errno::EACCES do
@@ -894,7 +880,7 @@ class RbFind
         true
       end
     end
-    dir = (read_dir or return).entries!
+    dir = (read_dir or return).children
     if @sort.respond_to? :call then
       dir = dir.sort_by &@sort
     elsif @sort and @sort.nonzero? then
