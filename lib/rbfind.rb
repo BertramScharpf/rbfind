@@ -164,6 +164,8 @@ Derivated from stat:
     In case you did not call RbFind.colors, the environment variables
     RBFIND_COLORS and RBFIND_COLOURS are looked up. If neither is given
     but LSCOLORS is set, the fields 2-13 default to that.
+    A Gnu LS_COLOR-style string may also be given, though glob patterns will
+    not be unregarded. If LS_COLORS is set, the colors default to that.
 
     The letters mean:
       a = black, b = red, c = green, d = brown, e = blue,
@@ -269,7 +271,7 @@ Sort without case sensitivity and preceding dot:
 
 class RbFind
 
-  VERSION = "1.12".freeze
+  VERSION = "1.13".freeze
 
   class <<self
     private :new
@@ -494,25 +496,35 @@ class RbFind
   class <<self
 
     def colors str
-      @cols = []
-      str.scan /(.)(.)/i do
-        fg, bg = $~.captures.map { |x| x.downcase.ord - ?a.ord }
-        a = []
-        case fg
-          when 0..7 then a.push 30 + fg
+      if str =~ /:/ then
+        h = {}
+        (str.split ":").each { |a|
+          t, c = a.split "="
+          h[  t] = c
+        }
+        %w(rs or di ln so pi ex bd cd su sg tw ow - -).map { |t| h[ t] }
+      else
+        cols = []
+        str.scan /(.)(.)/i do
+          fg, bg = $~.captures.map { |x| x.downcase.ord - ?a.ord }
+          a = []
+          case fg
+            when 0..7 then a.push 30 + fg
+          end
+          a.push 1 if $1 == $1.upcase
+          case bg
+            when 0..7 then a.push 40 + bg
+          end
+          e = a.join ";"
+          cols.push e
         end
-        a.push 1 if $1 == $1.upcase
-        case bg
-          when 0..7 then a.push 40 + bg
-        end
-        e = a.join ";"
-        @cols.push e
+        cols
       end
     end
     alias colours colors
 
     def colored arg, num
-      @cols or colors col_str
+      @cols ||= colors col_str
       "\e[#{@cols[num]}m#{arg}\e[m"
     end
     alias coloured colored
@@ -520,7 +532,7 @@ class RbFind
     private
 
     def col_str
-      ENV[ "RBFIND_COLORS"] || ENV[ "RBFIND_COLOURS"] || (
+      ENV[ "RBFIND_COLORS"] || ENV[ "RBFIND_COLOURS"] || ENV[ "LS_COLORS"] || (
         env = DEFAULT_COLORS.dup
         els = ENV[ "LSCOLORS"]
         if els then
