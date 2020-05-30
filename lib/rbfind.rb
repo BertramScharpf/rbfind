@@ -271,7 +271,7 @@ Sort without case sensitivity and preceding dot:
 
 class RbFind
 
-  VERSION = "1.13".freeze
+  VERSION = "1.14".freeze
 
   class <<self
     private :new
@@ -736,7 +736,7 @@ class RbFind
   #    novcs()   -> nil
   #
   # Perform <code>prune</code> if the current object is a CVS, Subversion or
-  # Git directory.
+  # Git, etc. directory.
   #
   def novcs
     prune if %w(CVS .svn .git .hg .fslckout).include? name
