@@ -641,7 +641,7 @@ class RbFind
       file.each_line { |l|
         l.chomp!
         n += 1
-        set_predefs l, n
+        $_, $. = l, n
         r ||= true if yield l, n
       }
       r
@@ -833,14 +833,8 @@ class RbFind
   end
 
   def call_block
-    set_predefs name, count
+    $_, $. = name, count
     @block.call self
-  end
-
-  def set_predefs l, n
-    b = @block.binding
-    b.local_variable_set "_", [ l, n]
-    b.eval "$_, $. = *_"
   end
 
   def read_dir
