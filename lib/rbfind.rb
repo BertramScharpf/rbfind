@@ -22,12 +22,59 @@ class Dir
 end
 
 class File
+
   class Stat
+
     def identical? oth
       oth = self.class.new oth unless self.class === oth
       dev == oth.dev and ino == oth.ino
     end
+
+    def stype
+      case mode >> 12
+        when 001 then "p"
+        when 002 then "c"
+        when 004 then "d"
+        when 006 then "b"
+        when 010 then "-"
+        when 012 then "l"
+        when 014 then "s"
+        when 016 then "w"
+        else          "?"
+      end
+    end
+
+    def suffix
+      case mode >> 12
+        when 001 then "|"
+        when 002 then " "
+        when 004 then "/"
+        when 006 then " "
+        when 010 then executable? ? "*" : " "
+        when 012 then "@"
+        when 014 then "="
+        when 016 then "%"
+        else          "?"
+      end
+    end
+
+    def modes
+      r = ""
+      m = mode
+      3.times {
+        r.insert 0, ((m & 01).nonzero? ? "x" : "-")
+        r.insert 0, ((m & 02).nonzero? ? "w" : "-")
+        r.insert 0, ((m & 04).nonzero? ? "r" : "-")
+        m >>= 3
+      }
+      (m & 04).nonzero? and r[ 2] = r[ 2] == "x" ? "s" : "S"
+      (m & 02).nonzero? and r[ 5] = r[ 5] == "x" ? "s" : "S"
+      (m & 01).nonzero? and r[ 8] = r[ 8] == "x" ? "t" : "T"
+      r
+    end
+
   end
+
 end
 
 
@@ -399,50 +446,6 @@ class RbFind
   def dir? ; stat.directory? ; end
 
   # :call-seq:
-  #    stype()   -> str
-  #
-  def stype
-    m = stat.mode >> 12 rescue nil
-    case m
-      when 001 then "p"
-      when 002 then "c"
-      when 004 then "d"
-      when 006 then "b"
-      when 010 then "-"
-      when 012 then "l"
-      when 014 then "s"
-      when 016 then "w"
-      when nil then "#"
-      else          "?"
-    end
-  end
-
-  # :call-seq:
-  #    modes()   -> str
-  #
-  def modes
-    m = stat.mode
-    r = ""
-    3.times {
-      h = m & 07
-      m >>= 3
-      r.insert 0, ((h & 01).nonzero? ? "x" : "-")
-      r.insert 0, ((h & 02).nonzero? ? "w" : "-")
-      r.insert 0, ((h & 04).nonzero? ? "r" : "-")
-    }
-    if (m & 04).nonzero? then
-      r[ 2] = r[ 2, 1] == "x" ? "s" : "S"
-    end
-    if (m & 02).nonzero? then
-      r[ 5] = r[ 5, 1] == "x" ? "s" : "S"
-    end
-    if (m & 01).nonzero? then
-      r[ 8] = r[ 8, 1] == "x" ? "t" : "T"
-    end
-    r
-  end
-
-  # :call-seq:
   #    filesize => nil or int
   #    filesize { |size| ... } => obj
   #
@@ -522,24 +525,6 @@ class RbFind
 
   end
 
-
-  # :call-seq:
-  #    suffix()   -> str
-  #
-  def suffix
-    m = stat.mode >> 12 rescue nil
-    case m
-      when 001 then "|"
-      when 002 then " "
-      when 004 then "/"
-      when 006 then " "
-      when 010 then stat.executable? ? "*" : " "
-      when 012 then "@"
-      when 014 then "="
-      when 016 then "%"
-      else          "?"
-    end
-  end
 
   autoload :Etc, "etc"
 
