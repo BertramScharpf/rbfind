@@ -286,6 +286,7 @@ class RbFind
           f = new path, count, params, &block
           count = f.count
         end
+        count
       else
         f = new nil, 0, params, &block
         f.count
@@ -356,8 +357,8 @@ class RbFind
   def hidden?  ; name =~ /^\./ ; end
   def visible? ; not hidden?   ; end
 
-  def stat ; File.lstat @path ; end
-  def mode ; stat.mode        ; end
+  def stat ; @stat ||= File.lstat @path ; end
+  def mode ; stat.mode                  ; end
 
   def readlink
     File.readlink @path if stat.symlink?
@@ -473,7 +474,7 @@ class RbFind
   #
   def filesize
     if block_given? then
-      yield stat.size if file?
+      yield filesize
     else
       stat.size if file?
     end
@@ -831,6 +832,7 @@ class RbFind
     if @path.empty? then @path = Dir::CUR_DIR end
     @fullpath.freeze
     @path.freeze
+    @stat = nil
   end
 
   def walk
