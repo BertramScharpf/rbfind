@@ -526,7 +526,12 @@ class RbFind
   end
 
 
-  autoload :Etc, "etc"
+  def etc
+    Etc
+  rescue NameError
+    require "etc" and retry
+    raise
+  end
 
   # :call-seq:
   #    user()   -> str
@@ -535,7 +540,7 @@ class RbFind
   #
   def user
     u = stat.uid
-    (Etc.getpwuid u).name rescue u.to_s
+    (etc.getpwuid u).name rescue u.to_s
   end
   alias owner user
 
@@ -546,7 +551,7 @@ class RbFind
   #
   def group
     g = stat.gid
-    (Etc.getgrgid g).name rescue g.to_s
+    (etc.getgrgid g).name rescue g.to_s
   end
 
 
