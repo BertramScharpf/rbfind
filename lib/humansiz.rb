@@ -82,17 +82,35 @@ class Numeric                   # sizes in bytes
 end
 
 
-class Numeric                   # time values
-  def s ; self      ; end
-  def m ; s    * 60 ; end
-  def h ; m    * 60 ; end
-  def d ; h    * 24 ; end
-  def w ; d    *  7 ; end
+class Numeric
+  "smhdw".each_char { |c|
+    define_method c do Time.to_sec "#{self}#{c}" end
+  }
+  def t ; Time.to_unit self ; end
 end
 
 
-
 class Time
+
+  TIME_UNITS = [ "seconds", 60, "minutes", 60, "hours", 24, "days", 7, "weeks", ]
+  class <<self
+    def to_unit n
+      u = TIME_UNITS.each_slice 2 do |nam,val|
+        break nam if not val or n < val
+        n /= val
+      end
+      "#{n}#{u[0]}"
+    end
+    def to_sec str
+      str =~ /(\d*) *(\w*)/
+      num, unit = $1.to_i, $2
+      TIME_UNITS.each { |nam,val|
+        return num if nam.start_with? unit
+        num *= val
+      }
+      raise "No time unit: #{unit}."
+    end
+  end
 
   # :call-seq:
   #    time.lsish()  -> str

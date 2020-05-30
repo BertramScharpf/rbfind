@@ -67,14 +67,6 @@ In Ruby programs, you may call:
   f.stat          # file status information (File::Stat object)
   f.mode          # access mode (like 0755, 0644)
   f.age           # age in seconds since walk started
-  f.age_s         #   dto. (alias)
-  f.age_secs      #   dto. (alias)
-  f.age_m         # age in minutes
-  f.age_mins      #   dto. (alias)
-  f.age_h         # age in hours
-  f.age_hours     #   dto. (alias)
-  f.age_d         # age in days
-  f.age_days      #   dto. (alias)
   f.user          # owner
   f.owner         #   dto. (alias)
   f.group         # group owner
@@ -393,21 +385,6 @@ class RbFind
 
   def now ; @start ; end
   def age ; @start - stat.mtime ; end
-  alias age_secs age
-  alias age_s    age_secs
-
-  # :stopdoc:
-  MINUTE = 60
-  HOUR   = 60*MINUTE
-  DAY    = 24*HOUR
-  # :startdoc:
-
-  def age_mins  ; age / MINUTE ; end
-  alias age_m    age_mins
-  def age_hours ; age / HOUR   ; end
-  alias age_h    age_hours
-  def age_days  ; age / DAY    ; end
-  alias age_d    age_days
 
   private
 
