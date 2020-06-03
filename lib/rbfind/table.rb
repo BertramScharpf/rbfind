@@ -13,6 +13,10 @@ module RbFind
       @rows = []
     end
 
+    def spawn
+      self.class.new *@heads
+    end
+
     def add *row
       row.flatten!
       n = @heads.size

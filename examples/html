@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 #
-#  html_example  --  Example that produces HTML output
+#  html  --  Example that produces HTML output
 #
 
 require "rbfind"
