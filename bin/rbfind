@@ -79,7 +79,7 @@ module RbFind
           when '--bw'        then @color = false
           when '--colored'   then @color = true
           when '--depth'     then @params[ :depth_first] = true
-          when '--maxdepth'  then @params[ :max_depth] = arg
+          when '--maxdepth'  then @params[ :max_depth] = arg.to_i
           when '--follow'    then @params[ :follow] = true
           when '--nosort'    then @params[ :sort] = false
           when '--sort-by'   then @params[ :sort] = instance_eval "proc { |n| #{arg} }"

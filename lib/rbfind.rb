@@ -266,7 +266,7 @@ Sort without case sensitivity and preceding dot:
     private
 
     def initialize max_depth: nil, depth_first: nil, follow: nil,
-                            sort: nil, reverse: nil, error: nil, &block
+                            sort: true, reverse: false, error: nil, &block
       @max_depth = max_depth
       @depth_first = depth_first
       @follow = follow
@@ -414,7 +414,8 @@ Sort without case sensitivity and preceding dot:
 
     def fullpath ; @fullpath ||= File.absolute_path @path, @walk.wd ; end
 
-    def stat ; @stat ||= File.lstat @path ; end
+    def stat  ; @stat  ||= File.lstat @path ; end
+    def rstat ; @rstat ||= File.stat  @path ; end
 
 
     private
@@ -496,7 +497,7 @@ Sort without case sensitivity and preceding dot:
 
     def broken_link?
       return if stat.symlink?
-      File.stat @path
+      rstat
       false
     rescue
       true
@@ -678,7 +679,7 @@ Sort without case sensitivity and preceding dot:
     def creadlink
       l = readlink
       if l then
-        s = File.stat @path rescue nil
+        s = rstat rescue nil
         color_stat l, s
       end
     end

@@ -28,6 +28,10 @@ module RbFind
       @rows.sort_by! { |x| nums.map { |i| x[i] } }
     end
 
+    def empty?
+      @rows.empty?
+    end
+
     def output head: false
       make_lines head: head do |l| puts l end
     end
