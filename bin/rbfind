@@ -4,7 +4,6 @@
 #  rbfind  --  Ruby Find with many features
 #
 
-$:.unshift "./lib"
 require "rbfind"
 require "rbfind/humansiz"
 require "English"

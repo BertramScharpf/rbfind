@@ -1,0 +1,18 @@
+#!/usr/bin/env ruby
+
+#
+#  html_example  --  Example that produces HTML output
+#
+
+require "rbfind"
+require "rbfind/humansiz"
+require "rbfind/table"
+
+t = RbFind::Table.new "Mode", "Size>", "Age>", "Path", "Dest"
+RbFind.run do
+  # Column 5 is for sorting only.
+  t.add stype+modes, filesize, age.to_i.t, path, readlink, +age
+end
+t.sort_by! 5, 3
+puts t.make_html table: "rbfind"
+

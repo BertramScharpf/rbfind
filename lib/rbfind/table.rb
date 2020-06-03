@@ -15,8 +15,13 @@ module RbFind
 
     def add *row
       row.flatten!
-      row.map! { |r| r.to_s }
+      n = @heads.size
+      row[ 0, n] = row[ 0, n].map { |r| r.to_s }
       @rows.push row
+    end
+
+    def sort_by! *nums
+      @rows.sort_by! { |x| nums.map { |i| x[i] } }
     end
 
     def output head: false

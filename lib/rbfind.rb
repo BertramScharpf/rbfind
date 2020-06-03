@@ -19,11 +19,11 @@ tool.
 
 In Ruby programs, you may call:
 
-    RbFind::Walk.run                do puts path end
-    RbFind::Walk.run "dir"          do puts path end
-    RbFind::Walk.run "dir1", "dir2" do puts path end
-    RbFind::Walk.run %w(dir1 dir2)  do puts path end
-    RbFind::Walk.run "dir", :max_depth => 3 do puts path end
+    RbFind.run                do puts path end
+    RbFind.run "dir"          do puts path end
+    RbFind.run "dir1", "dir2" do puts path end
+    RbFind.run %w(dir1 dir2)  do puts path end
+    RbFind.run "dir", :max_depth => 3 do puts path end
 
 
 == File properties
@@ -131,8 +131,8 @@ Derivated from stat:
     color arg   # colorize argument
     colour arg  # alias
 
-    RbFind::Walk.colors str      # define colors
-    RbFind::Walk.colours str     # alias
+    RbFind.colors str      # define colors
+    RbFind.colours str     # alias
 
     Default color setup is "xxHbexfxcxdxbxegedabagacadAx".
     In case you did not call RbFind::Walk.colors, the environment variables
@@ -195,49 +195,49 @@ variables because these will be used in the further processing.
 
 Find them all:
 
-    RbFind::Walk.run do puts path end
+    RbFind.run do puts path end
 
 Omit version control:
 
-    RbFind::Walk.run "myproject" do
+    RbFind.run "myproject" do
       prune if name == ".svn"
       puts path
     end
 
     # or even
-    RbFind::Walk.run "myproject" do
+    RbFind.run "myproject" do
       novcs
       puts path
     end
 
 Mention directory contents before directory itself:
 
-    RbFind::Walk.run "myproject", depth_first: true do
+    RbFind.run "myproject", depth_first: true do
       puts path
     end
 
 Limit search depth:
 
-    RbFind::Walk.run max_depth: 2 do
+    RbFind.run max_depth: 2 do
       puts path
     end
 
 Unsorted (alphabetical sort is default):
 
-    RbFind::Walk.run sort: false do
+    RbFind.run sort: false do
       puts path
     end
 
 Reverse sort:
 
-    RbFind::Walk.run sort: true, reverse: true do
+    RbFind.run sort: true, reverse: true do
       puts path
     end
 
 Sort without case sensitivity and preceding dot:
 
     s = proc { |x| x =~ /^\.?/ ; $'.downcase }
-    RbFind::Walk.run sort: s do
+    RbFind.run sort: s do
       puts path
     end
 
@@ -247,6 +247,11 @@ Sort without case sensitivity and preceding dot:
   class Done  < Exception ; end
   class Prune < Exception ; end
 
+  class <<self
+    def run *args, **params, &block
+      Walk.run *args, **params, &block
+    end
+  end
 
   class Walk
 
@@ -445,9 +450,9 @@ Sort without case sensitivity and preceding dot:
 
     def dir? ; stat.directory? ; end
 
-    def aage ; @start - stat.atime ; end
-    def mage ; @start - stat.mtime ; end
-    def cage ; @start - stat.ctime ; end
+    def aage ; @walk.start - stat.atime ; end
+    def mage ; @walk.start - stat.mtime ; end
+    def cage ; @walk.start - stat.ctime ; end
     alias age mage
 
     # :call-seq:
@@ -735,13 +740,13 @@ Sort without case sensitivity and preceding dot:
     class <<self
 
       def colored arg, num
-        @cols ||= colors col_str
-        "\e[#{@cols[num]}m#{arg}\e[m"
+        colors col_str
+        "\e[#{@colors[num]}m#{arg}\e[m"
       end
       alias coloured colored
 
       def colors str
-        if str =~ /:/ then
+        @colors ||= if str =~ /:/ then
           h = {}
           (str.split ":").each { |a|
             t, c = a.split "="
