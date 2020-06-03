@@ -278,7 +278,6 @@ Sort without case sensitivity and preceding dot:
       @ostat = ostat if ostat.file?
 
       @wd, @start, @count = Dir.getwd, Time.now, 0
-      @levels = []
     end
 
     def sort_parser st, rev
@@ -292,27 +291,24 @@ Sort without case sensitivity and preceding dot:
 
     public
 
-    attr_reader :count, :start, :wd
-
-    def depth ; @levels.size ; end
+    attr_reader :wd, :start, :count, :depth
 
     def run *args
-      @levels = []
+      @levels, @depth = [], 0
       args.flatten!
+      args.compact!
       if args.empty? then
-        @lrest = @max_depth
-        visit_dir "."
+        visit_dir Dir::CUR_DIR
       else
-        @lrest = @max_depth + 1 if @max_depth
         args.each { |base|
           handle_error do
             File.exists? base or raise "`#{base}` doesn't exist."
-            visit base
+            visit_depth base
           end
         }
       end
     ensure
-      @levels = @lrest = nil
+      @levels = @depth = nil
     end
 
     private
@@ -322,8 +318,14 @@ Sort without case sensitivity and preceding dot:
     end
 
     def visit filename
+      @depth += 1
+      visit_depth filename
+    ensure
+      @depth -= 1
+    end
+
+    def visit_depth filename
       @levels.push filename.dup.freeze
-      @lrest -= 1 if @lrest
       p_, @path = @path, join_path
       if @depth_first then
         enter_dir
@@ -334,7 +336,6 @@ Sort without case sensitivity and preceding dot:
       @count += 1
     ensure
       @path = p_
-      @lrest += 1 if @lrest
       @levels.pop
     end
 
@@ -356,7 +357,7 @@ Sort without case sensitivity and preceding dot:
     end
 
     def visit_dir dir
-      return if @lrest and @lrest == 0
+      return if @max_depth and @max_depth == @depth
       list = (Dir.new dir).children
       @sort.call list
       list.each { |f| visit f }
