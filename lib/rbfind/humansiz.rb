@@ -1,7 +1,7 @@
 #
-#  humansiz.rb  --  human readable sizes
+#  humansiz.rb  --  Numeric class extensions for human readable sizes
 #
-# Numeric class extensions for human readable sizes.
+
 
 =begin rdoc
 
@@ -19,6 +19,7 @@ Examples:
   1.w   # => 604800
 
 =end
+
 
 class Numeric                   # sizes in bytes
 
@@ -86,7 +87,7 @@ class Numeric
   "smhdw".each_char { |c|
     define_method c do Time.to_sec "#{self}#{c}" end
   }
-  def t ; Time.to_unit self ; end
+  def t ; Time.to_unit to_i ; end
 end
 
 

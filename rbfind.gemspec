@@ -2,7 +2,8 @@
 #  rbfind.gemspec  --  RbFind Gem specification
 #
 
-require "./lib/rbfind"
+$:.unshift "./lib"
+require "rbfind"
 
 Gem::Specification.new do |s|
   s.name              = "rbfind"
@@ -26,7 +27,10 @@ EOT
   s.files             = %w(
                           README
                           lib/rbfind.rb
-                          lib/humansiz.rb
+                          lib/rbfind/core.rb
+                          lib/rbfind/csv.rb
+                          lib/rbfind/humansiz.rb
+                          lib/rbfind/table.rb
                         )
   s.executables       = %w(
                           rbfind
