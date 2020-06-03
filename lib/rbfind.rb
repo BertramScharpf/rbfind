@@ -47,6 +47,9 @@ In Ruby programs, you may call:
     user          # owner
     owner         # dto. (alias)
     group         # group owner
+    user!         # owner, "." if process owner
+    owner!        # dto. (alias)
+    group!        # group owner, "." if process owner
     readlink      # symlink pointer or nil (*)
     broken_link?  # what you expect
     arrow         # ls-style "-> symlink" suffix (*)
@@ -480,17 +483,28 @@ Sort without case sensitivity and preceding dot:
       require "etc" and retry
       raise
     end
+    def get_user  u ; (etc.getpwuid u).name rescue u.to_s ; end
+    def get_group g ; (etc.getgrgid g).name rescue g.to_s ; end
     public
 
     def user
-      u = stat.uid
-      (etc.getpwuid u).name rescue u.to_s
+      get_user stat.uid
     end
     alias owner user
 
+    def user!
+      u = stat.uid
+      u == Process.uid ? "."  : (get_user u)
+    end
+    alias owner! user!
+
     def group
+      get_group stat.gid
+    end
+
+    def group!
       g = stat.gid
-      (etc.getgrgid g).name rescue g.to_s
+      g == Process.gid ? "." : (get_group g)
     end
 
 
