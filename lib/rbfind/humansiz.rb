@@ -85,7 +85,7 @@ end
 
 class Numeric
   "smhdw".each_char { |c|
-    define_method c do Time.to_sec "#{self}#{c}" end
+    define_method c do Time.to_sec self, c end
   }
   def t ; Time.to_unit to_i ; end
 end
@@ -102,14 +102,16 @@ class Time
       end
       "#{n}#{u[0]}"
     end
-    def to_sec str
-      str =~ /(\d*) *(\w*)/
-      num, unit = $1.to_i, $2
-      TIME_UNITS.each { |nam,val|
+    def to_sec num, unit
+      TIME_UNITS.each_slice 2 do |nam,val|
         return num if nam.start_with? unit
         num *= val
-      }
+      end
       raise "No time unit: #{unit}."
+    end
+    def str_to_sec str
+      str =~ /(\d*) *(\w*)/
+      to_sec $1.to_i, $2
     end
   end
 
