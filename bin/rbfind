@@ -138,7 +138,7 @@ module RbFind
 
         when :grep then
           re = Regexp.new @block, @icase && Regexp::IGNORECASE
-          @block = "grep #{re.inspect}"
+          @block = "grep %r#{re.inspect}"
           @block << ", true" if co
           @block << " ; $stdout.flush" unless $stdout.tty?
           @binary or @block = "not binary? and (#@block)"
