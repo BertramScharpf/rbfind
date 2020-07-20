@@ -85,7 +85,7 @@ module RbFind
           when '--sort-by'   then @params[ :sort] = instance_eval "proc { |n| #{arg} }"
           when '--reverse'   then @params[ :reverse] = true
           when '--require'   then require arg
-          when '--fileutils' then require "fileutils" ; include FileUtils
+          when '--fileutils' then require "fileutils" ; RbFind::Entry.include FileUtils
           when '--puts-path' then @puts = true
           when '--ls-l'      then @puts = true ; @wd = 6
           when '--wider'     then @wd = @wd ? @wd.succ : 4
