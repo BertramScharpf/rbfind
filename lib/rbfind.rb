@@ -119,6 +119,8 @@ Derivated from stat:
     csv sep, path, ... # separate by user-defined separator
 
     rename newname   # rename, but leave it in the same directory
+    mv newname       # dto.
+    rm               # remove
 
 
 == Color support
@@ -374,16 +376,22 @@ Sort without case sensitivity and preceding dot:
         begin
           e.instance_eval &@block
         rescue Done
-        ensure
-          if !(e.name.equal? @levels.last) && e.name != @levels.last then
-            p = @path
+        end
+        if !(e.name.equal? @levels.last) && e.name != @levels.last then
+          if e.name then
             e.name == (File.basename e.name) or
               raise "#{self.class}: rename to `#{e.name}' may not be a path."
             e.name.freeze
             @levels.pop
             @levels.push e.name
-            @path = join_path
+            p, @path = @path, join_path
             File.rename p, @path
+          else
+            if e.dir? then
+              Dir.rmdir @path
+            else
+              File.unlink @path
+            end
           end
         end
         true
@@ -682,7 +690,9 @@ Sort without case sensitivity and preceding dot:
 
 
     def rename newname ; @name = newname ; end
+    alias mv rename
 
+    def rm ; @name = nil ; end
 
 
     def cname      ; color name      ; end

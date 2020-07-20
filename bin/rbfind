@@ -37,7 +37,6 @@ module RbFind
       [ %w(--sort-by   -s), :str, "sort expression ('n' is name)"],
       [ %w(--reverse   -R), :str, "reverse sort"],
       [ %w(--require   -r), :rb,  "require library"],
-      [ %w(--fileutils -U), nil,  "include FileUtils module"],
       [ %w(--puts-path -p), nil,  "do 'puts path/cpath' on true block"],
       [ %w(--ls-l      -P), nil,  "do 'ls -l' style output on true block"],
       [ %w(--wider     -+), nil,  "widen fields in long output format (--ls-l)"],
@@ -85,7 +84,6 @@ module RbFind
           when '--sort-by'   then @params[ :sort] = instance_eval "proc { |n| #{arg} }"
           when '--reverse'   then @params[ :reverse] = true
           when '--require'   then require arg
-          when '--fileutils' then require "fileutils" ; RbFind::Entry.include FileUtils
           when '--puts-path' then @puts = true
           when '--ls-l'      then @puts = true ; @wd = 6
           when '--wider'     then @wd = @wd ? @wd.succ : 4
