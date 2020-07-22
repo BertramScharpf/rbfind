@@ -519,12 +519,13 @@ Sort without case sensitivity and preceding dot:
     def readlink ; File.readlink @path if stat.symlink? ; end
 
     def broken_link?
-      return if stat.symlink?
+      return unless stat.symlink?
       rstat
       false
     rescue
       true
     end
+    alias broken? broken_link?
 
     ARROW = " -> "
     def arrow

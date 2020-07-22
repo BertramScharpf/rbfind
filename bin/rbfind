@@ -369,6 +369,7 @@ module RbFind
     alias hidden       hidden?
     alias visible      visible?
     alias broken_link  broken_link?
+    alias broken       broken?
     alias dir          dir?
     alias binary       binary?
     alias bin          bin?
