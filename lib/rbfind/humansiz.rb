@@ -83,6 +83,16 @@ class Numeric                   # sizes in bytes
 end
 
 
+class Integer
+  def to_g
+    s = to_s
+    l = []
+    while (t = s.slice! /\d{1,3}\z/) do l.unshift t end
+    l.join "_"
+  end
+end
+
+
 class Numeric
   "smhdw".each_char { |c|
     define_method c do Time.to_sec self, c end
