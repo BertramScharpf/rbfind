@@ -9,18 +9,28 @@ module RbFind
 
     def initialize *heads
       heads.flatten!
-      @heads = heads
+      @heads = heads.map { |h|
+        a = case h
+          when />\z/  then +1
+          when /\^\z/ then  0
+          when /<?\z/ then -1
+        end
+        [ $`, a]
+      }
       @rows = []
     end
 
-    def spawn
-      self.class.new *@heads
+    attr_reader :heads
+    protected :heads
+    def initialize_copy oth
+      @heads = oth.heads
+      @rows = []
     end
 
     def add *row
       row.flatten!
       n = @heads.size
-      row[ 0, n] = row[ 0, n].map { |r| r.to_s }
+      row.map! { |r| break if n.zero? ; n -= 1 ; r.to_s }
       @rows.push row
     end
 
@@ -38,14 +48,14 @@ module RbFind
 
     def make_lines head: false
       rs = @rows
-      rs.unshift heads_plain if head
+      rs.unshift @heads.map { |(h,a)| h } if head
       w = calc_widths
       rs.each { |r|
-        j = (w.zip @heads, r).map { |v,h,c|
-          case h
-            when />\z/  then c.rjust  v
-            when /\^\z/ then c.center v
-            when /<?\z/ then c.ljust  v
+        j = (w.zip @heads, r).map { |v,(_,a),c|
+          case a
+            when -1 then c.ljust  v
+            when  0 then c.center v
+            when +1 then c.rjust  v
           end
         }
         l = j.join " "
@@ -59,14 +69,14 @@ module RbFind
       @html = ""
       tag :table, table, nl: 2 do
         tag :tr, row, nl: 1 do
-          (@heads.zip heads_plain).each { |h,c|
-            tag :td, c.downcase, align: (html_align h) do @html << c end
+          @heads.each { |(h,a)|
+            tag :td, h.downcase, align: a do @html << h end
           }
         end
         @rows.each { |r|
           tag :tr, table, nl: 1 do
-            (@heads.zip heads_plain, r).each { |h,g,c|
-              tag :td, g.downcase, align: (html_align h) do @html << c end
+            (@heads.zip r).each { |(g,a),c|
+              tag :td, g.downcase, align: a do @html << c end
             }
           end
         }
@@ -86,13 +96,9 @@ module RbFind
       w
     end
 
-    def heads_plain
-      @heads.map { |h| h.sub /\W\z/, "" }
-    end
-
     def tag name, cls, nl: 0, align: nil
       @html << "<#{name}"
-      @html << " style=\"text-align: " << align << ";\"" if align
+      @html << " style=\"text-align: " << (html_align align) << ";\"" if align
       @html << " class=\"" << cls << "\"" if cls
       @html << ">"
       @html << $/ if nl > 1
@@ -101,11 +107,11 @@ module RbFind
       @html << $/ if nl > 0
     end
 
-    def html_align h
-      case h
-        when />/  then "right"
-        when /\^/ then "center"
-        when /<?/ then "left"
+    def html_align a
+      case a
+        when -1 then "left"
+        when  0 then "center"
+        when +1 then "right"
       end
     end
 

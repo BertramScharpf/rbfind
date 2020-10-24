@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 #
-#  spawn  --  Example that produces two tables for dirs and files
+#  sepdirs  --  Example that produces two tables for dirs and files
 #
 
 require "rbfind"
@@ -9,7 +9,7 @@ require "rbfind/humansiz"
 require "rbfind/table"
 
 t = RbFind::Table.new "Mode", "Size>", "Age>", "Path", "Dest"
-s = t.spawn
+s = t.dup
 RbFind.run max_depth: 1 do
   (dir? ? s : t).add stype+modes, size, age.to_i.t, path, readlink, +age
 end
