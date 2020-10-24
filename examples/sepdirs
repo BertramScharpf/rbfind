@@ -17,7 +17,8 @@ end
 s.sort_by! 3
 t.sort_by! 5, 3
 
-s.output
+s.output ifempty: "No subdirectories"
 puts
-t.output
+t.output ifempty: "No files"
+puts
 

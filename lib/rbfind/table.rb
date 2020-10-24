@@ -42,7 +42,11 @@ module RbFind
       @rows.empty?
     end
 
-    def output head: false
+    def output head: false, ifempty: nil
+      if empty? and ifempty then
+        puts ifempty
+        return
+      end
       make_lines head: head do |l| puts l end
     end
 
