@@ -8,7 +8,7 @@ require "rbfind/csv"
 
 module RbFind
 
-  VERSION = "2.3.1".freeze
+  VERSION = "2.4".freeze
 
 =begin rdoc
 
@@ -307,7 +307,7 @@ Sort without case sensitivity and preceding dot:
       else
         args.each { |base|
           handle_error do
-            File.exists? base or raise "`#{base}` doesn't exist."
+            File.lstat base rescue raise "`#{base}` doesn't exist."
             visit_depth base
           end
         }
@@ -552,7 +552,11 @@ Sort without case sensitivity and preceding dot:
     # Check whether a directory contains an entry.
     #
     def contains? name
-      File.exists? File.join @path, name
+      p = File.join @path, name
+      File.lstat p
+      true
+    rescue
+      false
     end
 
     # :call-seq:

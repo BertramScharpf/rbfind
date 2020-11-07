@@ -142,7 +142,7 @@ module RbFind
           @binary or @block = "not binary? and (#@block)"
 
         else
-          @block ||= if @args.last and not (File.exists? @args.last) then
+          @block ||= if @args.last and not (File.lstat @args.last rescue false) then
             @args.pop.dup
           else
             @puts ||= true
