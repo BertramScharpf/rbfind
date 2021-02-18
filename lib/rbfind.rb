@@ -251,17 +251,17 @@ Sort without case sensitivity and preceding dot:
   class Found
 
     attr_reader :wd, :start, :count
-    attr_reader :depth, :levels, :path
+    attr_reader :depth, :name, :path
 
     def initialize
       @wd, @start, @count = Dir.getwd, Time.now, 0
     end
 
     def run
-      @levels, @depth = [], 0
+      @name, @depth = nil, 0
       yield
     ensure
-      @levels = @depth = nil
+      @name = @depth = nil
     end
 
     def step list
@@ -276,7 +276,8 @@ Sort without case sensitivity and preceding dot:
     end
 
     def enter filename
-      @levels.push filename.dup.freeze
+      n_ = @name
+      @name = filename.dup.freeze
       @dir = @path
       p_ = @path
       @path = join_path
@@ -284,23 +285,18 @@ Sort without case sensitivity and preceding dot:
       yield
     ensure
       @path = p_
-      @levels.pop
-    end
-
-    def name
-      @levels.last
+      @name = n_
     end
 
     def replace name
-      @levels.pop
-      @levels.push name.dup.freeze
+      @name = name.dup.freeze
       @path = join_path
     end
 
     private
 
     def join_path
-      r = @levels.last
+      r = name
       r = (File.join @dir, r).freeze if @dir
       r
     end
