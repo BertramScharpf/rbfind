@@ -8,7 +8,7 @@ require "rbfind/csv"
 
 module RbFind
 
-  VERSION = "2.4".freeze
+  VERSION = "2.5".freeze
 
 =begin rdoc
 
@@ -248,6 +248,64 @@ Sort without case sensitivity and preceding dot:
 
 =end
 
+  class Found
+
+    attr_reader :wd, :start, :count
+    attr_reader :depth, :levels, :path
+
+    def initialize
+      @wd, @start, @count = Dir.getwd, Time.now, 0
+    end
+
+    def run
+      @levels, @depth = [], 0
+      yield
+    ensure
+      @levels = @depth = nil
+    end
+
+    def step list
+      list.each do |f|
+        @depth += 1
+        enter f do
+          yield
+        end
+      ensure
+        @depth -= 1
+      end
+    end
+
+    def enter filename
+      @levels.push filename.dup.freeze
+      @dir = @path
+      p_ = @path
+      @path = join_path
+      @count += 1
+      yield
+    ensure
+      @path = p_
+      @levels.pop
+    end
+
+    def name
+      @levels.last
+    end
+
+    def replace name
+      @levels.pop
+      @levels.push name.dup.freeze
+      @path = join_path
+    end
+
+    private
+
+    def join_path
+      r = @levels.last
+      r = (File.join @dir, r).freeze if @dir
+      r
+    end
+
+  end
 
   class Done  < Exception ; end
   class Prune < Exception ; end
@@ -264,9 +322,11 @@ Sort without case sensitivity and preceding dot:
       def run *args, **params, &block
         i = new **params, &block
         i.run *args
-        i.count
+        i.found.count
       end
     end
+
+    attr_reader :found
 
     private
 
@@ -282,7 +342,7 @@ Sort without case sensitivity and preceding dot:
       ostat = $stdout.stat
       @ostat = ostat if ostat.file?
 
-      @wd, @start, @count = Dir.getwd, Time.now, 0
+      @found = Found.new
     end
 
     def sort_parser st, rev
@@ -296,101 +356,82 @@ Sort without case sensitivity and preceding dot:
 
     public
 
-    attr_reader :wd, :start, :count, :depth
-
     def run *args
-      @levels, @depth = [], 0
-      args.flatten!
-      args.compact!
-      if args.empty? then
-        visit_dir Dir::CUR_DIR
-      else
-        args.each { |base|
-          handle_error do
-            File.lstat base rescue raise "`#{base}` doesn't exist."
-            visit_depth base
-          end
-        }
-      end
-    ensure
-      @levels = @depth = nil
+      @found.run {
+        args.flatten!
+        args.compact!
+        if args.empty? then
+          visit_dir Dir::CUR_DIR
+        else
+          args.each { |base|
+            handle_error do
+              File.lstat base rescue raise "`#{base}` doesn't exist."
+              @found.enter base do
+                visit_depth
+              end
+            end
+          }
+        end
+      }
     end
 
     private
 
-    def join_path
-      (File.join @levels).freeze
+    def visit_dir dir
+      return if @max_depth and @max_depth == @found.depth
+      list = (Dir.new dir).children
+      @sort.call list
+      @found.step list do
+        visit_depth
+      end
     end
 
-    def visit filename
-      @depth += 1
-      visit_depth filename
-    ensure
-      @depth -= 1
-    end
-
-    def visit_depth filename
-      @levels.push filename.dup.freeze
-      p_, @path = @path, join_path
+    def visit_depth
       if @depth_first then
         enter_dir
         call_block or raise "#{self.class}: prune doesn't work with :depth_first."
       else
         call_block and enter_dir
       end
-      @count += 1
-    ensure
-      @path = p_
-      @levels.pop
     end
 
     def enter_dir
-      return unless File.directory? @path
-      if File.symlink? @path then
+      return unless File.directory? @found.path
+      if File.symlink? @found.path then
         return unless @follow and handle_error do
-          d = @path.dup
+          d = @found.path.dup
           while d != Dir::CUR_DIR do
             d, = File.split d
-            raise "cyclic recursion in #@path" if File.identical? d, @path
+            raise "cyclic recursion in #{@found.path}" if File.identical? d, @found.path
           end
           true
         end
       end
       handle_error do
-        visit_dir @path
+        visit_dir @found.path
       end
     end
 
-    def visit_dir dir
-      return if @max_depth and @max_depth == @depth
-      list = (Dir.new dir).children
-      @sort.call list
-      list.each { |f| visit f }
-    ensure
-    end
-
     def call_block
-      e = Entry.new @levels.last, @path, self
+      e = Entry.new @found.name, @found.path, @found
       handle_error do
-        $_, $. = e.name, count
+        $_, $. = e.name, @found.count
         begin
           e.instance_eval &@block
         rescue Done
         end
-        if !(e.name.equal? @levels.last) && e.name != @levels.last then
+        if e.name != @found.name then
           if e.name then
             e.name == (File.basename e.name) or
               raise "#{self.class}: rename to `#{e.name}' may not be a path."
-            e.name.freeze
-            @levels.pop
-            @levels.push e.name
-            p, @path = @path, join_path
-            File.rename p, @path
+            p = @found.path
+            @found.replace e.name
+            File.rename p, @found.path
           else
             if e.dir? then
-              Dir.rmdir @path
+              Dir.rmdir @found.path
             else
-              File.unlink @path
+              File.unlink @found.path
             end
           end
         end
@@ -417,14 +458,14 @@ Sort without case sensitivity and preceding dot:
 
     attr_reader :path, :name
 
-    def initialize name, path, walk
-      @name, @path, @walk = name, path, walk
+    def initialize name, path, found
+      @name, @path, @found = name, path, found
     end
 
-    def depth ; @walk.depth ; end
-    def now   ; @walk.start ; end
+    def depth ; @found.depth ; end
+    def now   ; @found.start ; end
 
-    def fullpath ; @fullpath ||= File.absolute_path @path, @walk.wd ; end
+    def fullpath ; @fullpath ||= File.absolute_path @path, @found.wd ; end
 
     def stat  ; @stat  ||= File.lstat @path ; end
     def rstat ; @rstat ||= File.stat  @path ; end
@@ -463,9 +504,9 @@ Sort without case sensitivity and preceding dot:
 
     def dir? ; stat.directory? ; end
 
-    def aage ; @walk.start - stat.atime ; end
-    def mage ; @walk.start - stat.mtime ; end
-    def cage ; @walk.start - stat.ctime ; end
+    def aage ; @found.start - stat.atime ; end
+    def mage ; @found.start - stat.mtime ; end
+    def cage ; @found.start - stat.ctime ; end
     alias age mage
 
     # :call-seq:
