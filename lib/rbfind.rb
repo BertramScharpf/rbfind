@@ -300,9 +300,7 @@ Sort without case sensitivity and preceding dot:
           handle_error do
             File.lstat base rescue raise "`#{base}` doesn't exist."
             e = Elem.new self, base
-            enter e do
-              visit_depth
-            end
+            enter e
           end
         }
       end
@@ -317,9 +315,7 @@ Sort without case sensitivity and preceding dot:
     def step list
       list.each do |e|
         @depth += 1
-        enter e do
-          yield
-        end
+        enter e
       ensure
         @depth -= 1
       end
@@ -346,20 +342,19 @@ Sort without case sensitivity and preceding dot:
     def enter elem
       e_, @elem = @elem, elem
       @count += 1
-      yield
+      visit_depth
     ensure
       @elem = e_
     end
+
+
     def visit_dir dir
       return if @params.max_depth and @params.max_depth == @depth
       list = (Dir.new dir).children
       @params.sort.call list
       list = list.map { |f| Elem.new self, f }
-      step list do
-        visit_depth
-      end
+      step list
     end
-
 
     def visit_depth
       if @params.depth_first then
