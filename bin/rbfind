@@ -483,6 +483,20 @@ class NilClass
   end
 end
 
+class TrueClass
+  def <=> oth
+    oth == true ? 0 : oth == false ? 1 : nil
+  end
+  include Enumerable
+end
+
+class FalseClass
+  def <=> oth
+    oth == false ? 0 : oth == true ? -1 : nil
+  end
+  include Enumerable
+end
+
 class Proc
   def to_s
     "#<%s:0x%08x>" % [ self.class, object_id]

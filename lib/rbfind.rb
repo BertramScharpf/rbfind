@@ -241,7 +241,7 @@ Reverse sort:
 
 Sort without case sensitivity and preceding dot:
 
-    s = proc { |x| x =~ /^\.?/ ; $'.downcase }
+    s = proc { name =~ /^\.?/ ; $'.downcase }
     RbFind.run sort: s do
       puts path
     end
@@ -270,22 +270,23 @@ Sort without case sensitivity and preceding dot:
 
     private
 
-    Params = Struct.new :max_depth, :depth_first, :follow, :sort, :error, :block
+    Params = Struct.new :max_depth, :depth_first, :follow,
+                            :sort, :reverse, :error, :block
 
     def initialize max_depth: nil, depth_first: nil, follow: nil,
                             sort: true, reverse: false, error: nil, &block
       @params = Params.new max_depth, depth_first, follow,
-                  (sort_parser sort, reverse), error, block
+                  (sort_parser sort), reverse, error, block
       @start, @count, @depth = Time.now, 0, 0
     end
 
-    def sort_parser st, rev
-      r = case st
-        when Proc                then proc { |l| l.sort_by! &st }
-        when nil, false, nil, "" then proc { }
-        else                          proc { |l| l.sort! }
+    def sort_parser st
+      case st
+        when Proc       then proc { |l| l.sort_by! { |e| e.instance_eval &st } }
+        when String     then proc { |l| l.sort_by! { |e| e.instance_eval st  } }
+        when nil, false then proc { }
+        else                 proc { |l| l.sort_by! { |e| e.name } }
       end
-      rev ? proc { |l| r.call l ; l.reverse! } : r
     end
 
     public
@@ -323,8 +324,9 @@ Sort without case sensitivity and preceding dot:
     def visit_dir dir
       return if @params.max_depth and @params.max_depth == @depth
       list = (Dir.new dir).children
-      @params.sort.call list
       list = list.map { |f| Entry.new f, self }
+      @params.sort.call list
+      list.reverse! if @params.reverse
       begin
         @depth += 1
         list.each { |e| enter e }
