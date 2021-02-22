@@ -299,7 +299,7 @@ Sort without case sensitivity and preceding dot:
         args.each { |base|
           handle_error do
             File.lstat base rescue raise "`#{base}` doesn't exist."
-            e = Elem.new self, base
+            e = Entry.new base, self
             enter e
           end
         }
@@ -308,104 +308,58 @@ Sort without case sensitivity and preceding dot:
 
     attr_reader :start, :count
     attr_reader :depth
-    attr_reader :elem
+    attr_reader :current
 
     private
 
-    def step list
-      list.each do |e|
-        @depth += 1
-        enter e
-      ensure
-        @depth -= 1
-      end
-    end
-
-    class Elem
-      attr_reader :name, :path
-      def initialize walk, filename
-        @prev, @name = walk.elem, filename.dup.freeze
-        @path = join_path
-      end
-      def rename filename
-        @name = filename.dup.freeze
-        @path = join_path
-      end
-      private
-      def join_path
-        r = @name
-        r = (File.join @prev.path, r).freeze if @prev
-        r
-      end
-    end
-
     def enter elem
-      e_, @elem = @elem, elem
+      c_, @current = @current, elem
       @count += 1
       visit_depth
     ensure
-      @elem = e_
+      @current = c_
     end
-
 
     def visit_dir dir
       return if @params.max_depth and @params.max_depth == @depth
       list = (Dir.new dir).children
       @params.sort.call list
-      list = list.map { |f| Elem.new self, f }
-      step list
+      list = list.map { |f| Entry.new f, self }
+      begin
+        @depth += 1
+        list.each { |e| enter e }
+      ensure
+        @depth -= 1
+      end
     end
 
     def visit_depth
       if @params.depth_first then
         enter_dir
-        call_block or raise "#{self.class}: prune doesn't work with :depth_first."
+        call_block
       else
         call_block and enter_dir
       end
     end
 
     def enter_dir
-      return unless File.directory? @elem.path
-      if File.symlink? @elem.path then
-        return unless @params.follow and handle_error do
-          d = @elem.path.dup
-          while d != Dir::CUR_DIR do
-            d, = File.split d
-            raise "cyclic recursion in #{@elem.path}" if File.identical? d, @elem.path
-          end
-          true
-        end
-      end
+      return unless @current.stat.directory? || (@params.follow &&
+                    @current.symlink? && @current.rstat.directory?)
       handle_error do
-        visit_dir @elem.path
+        @current.cyclic? and
+          raise "Cyclic recursion in #{@current.path}"
+        visit_dir @current.path
       end
     end
 
     def call_block
-      e = Entry.new @elem.name, @elem.path, self
       handle_error do
-        $_, $. = e.name, @count
         begin
-          e.instance_eval &@params.block
+          $_, $. = @current.name, @count
+          @current.instance_eval &@params.block
         rescue Done
         end
-        if e.name != @elem.name then
-          if e.name then
-            e.name == (File.basename e.name) or
-              raise "#{self.class}: rename to `#{e.name}' may not be a path."
-            p = @elem.path
-            @elem.rename e.name
-            File.rename p, @elem.path
-          else
-            if e.dir? then
-              Dir.rmdir @elem.path
-            else
-              File.unlink @elem.path
-            end
-          end
-        end
-        true
+        @current.path
       end
     rescue Prune
     end
@@ -428,9 +382,22 @@ Sort without case sensitivity and preceding dot:
 
     attr_reader :path, :name
 
-    def initialize name, path, walk
-      @name, @path, @walk = name, path, walk
+    def initialize filename, walk
+      @walk = walk
+      @prev, @name = walk.current, filename.dup.freeze
+      @path = join_path @name
     end
+
+    protected
+    attr_reader :prev
+    private
+    def join_path name
+      @prev ? (File.join @prev.path, name).freeze : name
+    end
+    def reset
+      @fullpath = @stat = @rstat = @ostat = @colors = nil
+    end
+    public
 
     def count ; @walk.count ; end
     def depth ; @walk.depth ; end
@@ -443,7 +410,7 @@ Sort without case sensitivity and preceding dot:
 
 
     private
-    def append_slash s ; (File.directory? s) ? (File.join s, "") : s ; end
+    def append_slash s ; directory? ? (File.join s, "") : s ; end
     public
 
     def path!     ; append_slash path     ; end
@@ -473,7 +440,23 @@ Sort without case sensitivity and preceding dot:
     end
     public
 
-    def dir? ; stat.directory? ; end
+    def directory? ; stat.directory? ; end
+    alias dir? directory?
+
+    def symlink? ; stat.symlink? ; end
+
+    def cyclic?
+      e = self
+      loop do
+        e = e.prev
+        e or break
+        if File.identical? e.path, @path then
+          return true
+        end
+      end
+      false
+    end
+
 
     def aage ; @walk.start - stat.atime ; end
     def mage ; @walk.start - stat.mtime ; end
@@ -528,10 +511,10 @@ Sort without case sensitivity and preceding dot:
     end
 
 
-    def readlink ; File.readlink @path if stat.symlink? ; end
+    def readlink ; File.readlink @path if symlink? ; end
 
     def broken_link?
-      return unless stat.symlink?
+      return unless symlink?
       rstat
       false
     rescue
@@ -541,7 +524,7 @@ Sort without case sensitivity and preceding dot:
 
     ARROW = " -> "
     def arrow
-      ARROW + (File.readlink @path) if stat.symlink?
+      ARROW + (File.readlink @path) if symlink?
     end
 
 
@@ -707,10 +690,27 @@ Sort without case sensitivity and preceding dot:
     include Csv
 
 
-    def rename newname ; @name = newname ; end
+    def rename newname
+      @name = newname
+      newname == (File.basename newname) or
+        raise "Rename to `#{newname}' may not be a path."
+      p = join_path newname
+      (File.exist? p) and raise "Rename to `#{p}` would overwrite."
+      File.rename @path, p
+      @name, @path = newname.dup.freeze, p
+      reset
+    end
     alias mv rename
 
-    def rm ; @name = nil ; end
+    def rm
+      if directory? then
+        Dir.rmdir @path
+      else
+        File.unlink @path
+      end
+      @name = @path = nil
+      reset
+    end
 
 
     def cname      ; color name      ; end
