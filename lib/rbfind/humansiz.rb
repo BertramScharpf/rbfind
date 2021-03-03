@@ -5,7 +5,7 @@
 
 =begin rdoc
 
-Human readable sizes, times, and modes.
+Human readable sizes and times.
 
 Examples:
 
