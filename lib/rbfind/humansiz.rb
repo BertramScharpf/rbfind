@@ -136,12 +136,23 @@ class Time
   #   file.stat.mtime.lsish    #=> " 1. Apr 2008    "
   #
   def lsish
-    strftime "#{PERC_DAY}. %b " +
-              (year == Time.now.year ? "%H:%M:%S" : "%Y    ")
+    strftime "%e. %b " + (year == Time.start.year ? "%H:%M:%S" : "%Y    ")
   end
 
-  # Windows has no "%e".
-  PERC_DAY = Time.now.strftime("%e") =~ /\d/ ? "%e" : "%d"   # :nodoc:
+  def long
+    s = Time.start
+    if year == s.year && month == s.month && day == s.day then
+      strftime "==%H:%M:%S"
+    else
+      strftime "%Y-%m-%d"
+    end
+  end
+
+  class <<self
+    def start
+      @start ||= Time.now
+    end
+  end
 
 end
 

@@ -277,7 +277,9 @@ Sort without case sensitivity and preceding dot:
                             sort: true, reverse: false, error: nil, &block
       @params = Params.new max_depth, depth_first, follow,
                   (sort_parser sort), reverse, error, block
-      @start, @count, @depth = Time.now, 0, 0
+      @start = Time.instance_eval { @start = Time.now }
+      Time.instance_eval { @start = Time.now }
+      @count, @depth = 0, 0
     end
 
     def sort_parser st
