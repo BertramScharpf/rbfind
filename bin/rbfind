@@ -88,7 +88,7 @@ module RbFind
           when '--puts-path' then @puts = true
           when '--ls-l'      then @puts = :ls  ; @wds = 6 ; @wd = 6
           when '--long'      then @puts = :alt ; @wds = 7 ; @wd = 4
-          when '--wider'     then @wd = @wd ? @wd.succ : 4
+          when '--wider'     then @wd and @wd += 2.succ ; @wds and @wds += @ptus == :alt ? 4 : 3
           when '--slash'     then @slash = true
           when '--lines'     then @lines = :plain ;                 @block = arg
           when '--reallines' then @lines = :plain ; @real = true ;  @block = arg
