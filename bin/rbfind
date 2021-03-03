@@ -39,7 +39,8 @@ module RbFind
       [ %w(--require   -r), :rb,  "require library"],
       [ %w(--puts-path -p), nil,  "do 'puts path/cpath' on true block"],
       [ %w(--ls-l      -P), nil,  "do 'ls -l' style output on true block"],
-      [ %w(--wider     -+), nil,  "widen fields in long output format (--ls-l)"],
+      [ %w(--long      -Q), nil,  "alternate long format on true block"],
+      [ %w(--wider     -+), nil,  "widen fields in long output format"],
       [ %w(--slash     -/), nil,  "append a slash to directory names"],
       [ %w(--lines     -l), :blk, "surround block by 'lines { |$_,$.| ... }'"],
       [ %w(--reallines -L), :blk, "same as -l but stop at any null character"],
@@ -85,7 +86,8 @@ module RbFind
           when '--reverse'   then @params[ :reverse] = true
           when '--require'   then require arg
           when '--puts-path' then @puts = true
-          when '--ls-l'      then @puts = true ; @wd = 6
+          when '--ls-l'      then @puts = :ls  ; @wds = 6 ; @wd = 6
+          when '--long'      then @puts = :alt ; @wds = 7 ; @wd = 4
           when '--wider'     then @wd = @wd ? @wd.succ : 4
           when '--slash'     then @slash = true
           when '--lines'     then @lines = :plain ;                 @block = arg
@@ -150,11 +152,15 @@ module RbFind
           end
           if @puts then
             @block = "( #@block ) and "
-            @block << if @wd then
-              "spcsep stype+modes, user.w#@wd, group.w#@wd, size.w#@wd, " +
-                "mtime.lsish, #{opath} + #{co ? 'carrow' : 'arrow'}.to_s"
-            else
-              "puts #{opath}"
+            @block << case @puts
+              when :alt then
+                "spcsep stype+modes, user!.w#@wd, group!.w#@wd, size.w_#@wds, " +
+                  "mtime.long,  #{opath} + #{co ? 'carrow' : 'arrow'}.to_s"
+              when :ls then
+                "spcsep stype+modes, user.w#@wd,  group.w#@wd,  size.w#@wds, " +
+                  "mtime.lsish, #{opath} + #{co ? 'carrow' : 'arrow'}.to_s"
+              else
+                "puts #{opath}"
             end
           end
 
@@ -447,8 +453,9 @@ class Integer
   # convenient formatting, right justification
   def method_missing sym, *args
     case sym.to_s   # .to_s for Ruby 1.8
-      when /\Aw_?(\d+)/ then "%#{$1}d" % self
-      else                   super
+      when /\Aw(\d+)/  then "%#{$1}d" % self
+      when /\Aw_(\d+)/ then to_g.rjust $1.to_i
+      else                  super
     end
   end
 end
