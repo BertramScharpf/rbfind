@@ -359,7 +359,7 @@ module RbFind
 
     def show
       puts "arguments:"
-      @args.each { |a| puts_val a }.any?              or puts_val "(none)"
+      @args.each { |a| puts_val a }.any?             or puts_val "(none)"
       puts "parameters:"
       @params.each { |k,v| puts_val k, "=", v }.any? or puts_val "(none)"
       puts "block:"
