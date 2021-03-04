@@ -33,9 +33,12 @@ module RbFind
       [ %w(--depth     -d), nil,  "yield directory after its contents"],
       [ %w(--maxdepth  -m), :num, "maxium step depth"],
       [ %w(--follow    -y), nil,  "follow symbolic links"],
-      [ %w(--nosort    -S), nil,  "unsorted"],
+      [ %w(--nosort    -U), nil,  "unsorted"],
       [ %w(--sort-by   -s), :str, "sort expression"],
       [ %w(--reverse   -R), nil,  "reverse the sort"],
+      [ %w(--time      -t), nil,  "sort by time, newest first"],
+      [ %w(--size      -S), nil,  "sort by size, largest first"],
+      [ %w(--dirs      -F), nil,  "sort directories before files"],
       [ %w(--require   -r), :rb,  "require library"],
       [ %w(--puts-path -p), nil,  "do 'puts path/cpath' on true block"],
       [ %w(--ls-l      -P), nil,  "do 'ls -l' style output on true block"],
@@ -53,6 +56,7 @@ module RbFind
       [ %w(--demand    -D), :rgx, "skip all filenames but these"],
       [ %w(--ext       -e), :lst, "skip all filename extensions but these"],
       [ %w(--visible   -I), nil,  "skip all hidden (starting with .dot)"],
+      [ %w(--all       -a), nil,  "all, including hidden (starting with .dot)"],
       [ %w(--nodirs    -N), nil,  "skip directories"],
       [ %w(--begin     -B), :blk, "eval block before begin"],
       [ %w(--end       -E), :blk, "eval block after end"],
@@ -82,13 +86,16 @@ module RbFind
           when '--maxdepth'  then @params[ :max_depth] = arg.to_i
           when '--follow'    then @params[ :follow] = true
           when '--nosort'    then @params[ :sort] = false
-          when '--sort-by'   then @params[ :sort] = instance_eval "proc { |n| #{arg} }"
+          when '--sort-by'   then @params[ :sort] = instance_eval "proc { #{arg} }"
+          when '--time'      then @params[ :sort] = proc { mtime } ; @params[ :reverse] = true
+          when '--size'      then @params[ :sort] = proc { size  } ; @params[ :reverse] = true
+          when '--dirs'      then @params[ :dirs] = true
           when '--reverse'   then @params[ :reverse] = true
           when '--require'   then require arg
           when '--puts-path' then @puts = true
           when '--ls-l'      then @puts = :ls  ; @wds = 6 ; @wd = 6
           when '--long'      then @puts = :alt ; @wds = 7 ; @wd = 4
-          when '--wider'     then @wd and @wd += 2.succ ; @wds and @wds += @ptus == :alt ? 4 : 3
+          when '--wider'     then @wd and @wd += 2.succ ; @wds and @wds += @puts == :alt ? 4 : 3
           when '--slash'     then @slash = true
           when '--lines'     then @lines = :plain ;                 @block = arg
           when '--reallines' then @lines = :plain ; @real = true ;  @block = arg
@@ -101,6 +108,7 @@ module RbFind
           when '--demand'    then @demand = arg
           when '--ext'       then @ext = arg
           when '--visible'   then @visible = true
+          when '--all'       then @visible = false
           when '--nodirs'    then @nodirs = true
           when '--begin'     then @blkbegin = arg
           when '--end'       then @blkend   = arg
@@ -252,7 +260,7 @@ module RbFind
         $ rbfind -d -m3 -- /mnt/data
         $ rbfind 'filesize > 10.MiB and colsep size.to_hib, path'
 
-        $ rbfind -S "name =~ /^\.*/ ; $'.downcase"
+        $ rbfind -U "name =~ /^\.*/ ; $'.downcase"
         $ rbfind -B '$s=0' -E 'puts $s.to_h' 'filesize {|s|$s+=s}'
         $ rbfind 'puts path if ext == ".rb"'
         $ rbfind -p 'ext == ".rb"'

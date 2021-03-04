@@ -271,12 +271,12 @@ Sort without case sensitivity and preceding dot:
     private
 
     Params = Struct.new :max_depth, :depth_first, :follow,
-                            :sort, :reverse, :error, :block
+                            :sort, :dirs, :reverse, :error, :block
 
     def initialize max_depth: nil, depth_first: nil, follow: nil,
-                            sort: true, reverse: false, error: nil, &block
+                            sort: true, dirs: false, reverse: false, error: nil, &block
       @params = Params.new max_depth, depth_first, follow,
-                  (sort_parser sort), reverse, error, block
+                  (sort_parser sort), dirs, reverse, error, block
       @start = Time.instance_eval { @start = Time.now }
       Time.instance_eval { @start = Time.now }
       @count, @depth = 0, 0
@@ -325,10 +325,10 @@ Sort without case sensitivity and preceding dot:
 
     def visit_dir dir
       return if @params.max_depth and @params.max_depth == @depth
-      list = (Dir.new dir).children
-      list = list.map { |f| Entry.new f, self }
+      list = (Dir.new dir).children.map { |f| Entry.new f, self }
       @params.sort.call list
-      list.reverse! if @params.reverse
+      @params.reverse and list.reverse!
+      @params.dirs and list = list.partition { |e| e.rstat.directory? }.flatten
       begin
         @depth += 1
         list.each { |e| enter e }
