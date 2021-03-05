@@ -43,6 +43,7 @@ module RbFind
       [ %w(--puts-path -p), nil,  "do 'puts path/cpath' on true block"],
       [ %w(--ls-l      -P), nil,  "do 'ls -l' style output on true block"],
       [ %w(--long      -Q), nil,  "alternate long format on true block"],
+      [ %w(--ino       -J), nil,  "show inodes and number of hard links"],
       [ %w(--wider     -+), nil,  "widen fields in long output format"],
       [ %w(--slash     -/), nil,  "append a slash to directory names"],
       [ %w(--lines     -l), :blk, "surround block by 'lines { |$_,$.| ... }'"],
@@ -95,7 +96,8 @@ module RbFind
           when '--puts-path' then @puts = true
           when '--ls-l'      then @puts = :ls  ; @wds = 6 ; @wd = 6
           when '--long'      then @puts = :alt ; @wds = 7 ; @wd = 4
-          when '--wider'     then @wd and @wd += 2.succ ; @wds and @wds += @puts == :alt ? 4 : 3
+          when '--ino'       then @puts = :ino ; @wds = 8 ; @wd = 2
+          when '--wider'     then @wd and @wd += 2.succ ; @wds and @wds += @puts != :ls ? 4 : 3
           when '--slash'     then @slash = true
           when '--lines'     then @lines = :plain ;                 @block = arg
           when '--reallines' then @lines = :plain ; @real = true ;  @block = arg
@@ -161,12 +163,14 @@ module RbFind
           if @puts then
             @block = "( #@block ) and "
             @block << case @puts
-              when :alt then
-                "spcsep stype+modes, user!.w#@wd, group!.w#@wd, size.w_#@wds, " +
-                  "mtime.long,  #{opath} + #{co ? 'carrow' : 'arrow'}.to_s"
               when :ls then
                 "spcsep stype+modes, user.w#@wd,  group.w#@wd,  size.w#@wds, " +
                   "mtime.lsish, #{opath} + #{co ? 'carrow' : 'arrow'}.to_s"
+              when :alt then
+                "spcsep stype+modes, user!.w#@wd, group!.w#@wd, size.w_#@wds, " +
+                  "mtime.long,  #{opath} + #{co ? 'carrow' : 'arrow'}.to_s"
+              when :ino then
+                "spcsep ino.w#@wds, nlink.w#@wd, #{opath}"
               else
                 "puts #{opath}"
             end
