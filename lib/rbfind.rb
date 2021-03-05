@@ -346,8 +346,12 @@ Sort without case sensitivity and preceding dot:
       return if @params.max_depth and @params.max_depth == @depth
       list = (Dir.new dir).children.map { |f| Entry.new f, self }
       @params.sort.call list
-      @params.reverse and list.reverse!
-      @params.dirs and list = list.partition { |e| e.rstat.directory? }.flatten
+      list.reverse! if @params.reverse
+      if @params.dirs then
+        list = list.partition { |e| e.rstat.directory? }
+        list.reverse! if @params.depth_first
+        list.flatten!
+      end
       step_depth do
         list.each { |e| enter e }
       end
