@@ -329,7 +329,9 @@ Sort without case sensitivity and preceding dot:
         begin
           call_block
         rescue Prune
-          raise "#{self.class}: prune with :depth_first is pointless."
+          handle_error do
+            raise "#{self.class}: prune with :depth_first is pointless."
+          end
         end
       else
         begin
