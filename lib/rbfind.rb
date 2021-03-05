@@ -299,13 +299,12 @@ Sort without case sensitivity and preceding dot:
       if args.empty? then
         visit_dir Dir::CUR_DIR
       else
-        args.each { |base|
-          handle_error do
-            File.lstat base rescue raise "`#{base}` doesn't exist."
+        step_depth do
+          args.each { |base|
             e = Entry.new base, self
-            enter e
-          end
-        }
+            enter e if handle_error do e.stat end
+          }
+        end
       end
     end
 
@@ -315,10 +314,30 @@ Sort without case sensitivity and preceding dot:
 
     private
 
+    def step_depth
+      @depth += 1
+      yield
+    ensure
+      @depth -= 1
+    end
+
     def enter elem
       c_, @current = @current, elem
       @count += 1
-      visit_depth
+      if @params.depth_first then
+        enter_dir
+        begin
+          call_block
+        rescue Prune
+          raise "#{self.class}: prune with :depth_first is pointless."
+        end
+      else
+        begin
+          call_block
+          enter_dir if @current.path
+        rescue Prune
+        end
+      end
     ensure
       @current = c_
     end
@@ -329,20 +348,8 @@ Sort without case sensitivity and preceding dot:
       @params.sort.call list
       @params.reverse and list.reverse!
       @params.dirs and list = list.partition { |e| e.rstat.directory? }.flatten
-      begin
-        @depth += 1
+      step_depth do
         list.each { |e| enter e }
-      ensure
-        @depth -= 1
-      end
-    end
-
-    def visit_depth
-      if @params.depth_first then
-        enter_dir
-        call_block
-      else
-        call_block and enter_dir
       end
     end
 
@@ -363,9 +370,7 @@ Sort without case sensitivity and preceding dot:
           @current.instance_eval &@params.block
         rescue Done
         end
-        @current.path
       end
-    rescue Prune
     end
 
     def handle_error
