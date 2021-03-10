@@ -350,7 +350,7 @@ Sort without case sensitivity and preceding dot:
       @params.sort.call list
       list.reverse! if @params.reverse
       if @params.dirs then
-        list = list.partition { |e| e.rstat.directory? }
+        list = list.partition { |e| e.rstat.directory? rescue nil }
         list.reverse! if @params.depth_first
         list.flatten!
       end
