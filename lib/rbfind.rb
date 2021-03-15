@@ -8,7 +8,7 @@ require "rbfind/csv"
 
 module RbFind
 
-  VERSION = "2.7".freeze
+  VERSION = "2.8".freeze
 
 =begin rdoc
 
@@ -275,7 +275,7 @@ Sort without case sensitivity and preceding dot:
 
     def initialize max_depth: nil, depth_first: nil, follow: nil,
                             sort: true, dirs: false, reverse: false, error: nil, &block
-      @params = Params.new max_depth&.nonzero?, depth_first, follow,
+      @params = Params.new max_depth, depth_first, follow,
                   (sort_parser sort), dirs, reverse, error, block
       @start = Time.instance_eval { @start = Time.now }
       Time.instance_eval { @start = Time.now }
@@ -299,12 +299,10 @@ Sort without case sensitivity and preceding dot:
       if args.empty? then
         visit_dir Dir::CUR_DIR
       else
-        step_depth do
-          args.each { |base|
-            e = Entry.new base, self
-            enter e if handle_error do e.stat end
-          }
-        end
+        args.each { |base|
+          e = Entry.new base, self
+          enter e if handle_error do e.stat end
+        }
       end
     end
 

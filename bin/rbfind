@@ -32,6 +32,7 @@ module RbFind
       [ %w(--colored   -c), nil,  "force color on -p or default output"],
       [ %w(--depth     -d), nil,  "yield directory after its contents"],
       [ %w(--maxdepth  -m), :num, "maxium step depth"],
+      [ %w(--anydepth  -M), nil,  "no maxium step depth"],
       [ %w(--follow    -y), nil,  "follow symbolic links"],
       [ %w(--nosort    -U), nil,  "unsorted"],
       [ %w(--sort-by   -s), :str, "sort expression"],
@@ -85,6 +86,7 @@ module RbFind
           when '--colored'   then @color = true
           when '--depth'     then @params[ :depth_first] = true
           when '--maxdepth'  then @params[ :max_depth] = arg.to_i
+          when '--anydepth'  then @params[ :max_depth] = nil
           when '--follow'    then @params[ :follow] = true
           when '--nosort'    then @params[ :sort] = false
           when '--sort-by'   then @params[ :sort] = instance_eval "proc { #{arg} }"
@@ -356,6 +358,9 @@ module RbFind
       error_handle do
         eval @blkbegin if @blkbegin
         b = @block
+        if not @args.empty? and @params[ :max_depth] then
+          @params[ :max_depth] -= 1
+        end
         Walk.run *@args, **@params do instance_eval b end
         eval @blkend   if @blkend
       end
