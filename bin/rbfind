@@ -358,9 +358,6 @@ module RbFind
       error_handle do
         eval @blkbegin if @blkbegin
         b = @block
-        if not @args.empty? and @params[ :max_depth] then
-          @params[ :max_depth] -= 1
-        end
         Walk.run *@args, **@params do instance_eval b end
         eval @blkend   if @blkend
       end

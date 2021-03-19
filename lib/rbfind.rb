@@ -343,7 +343,7 @@ Sort without case sensitivity and preceding dot:
     end
 
     def visit_dir dir
-      return if @params.max_depth and @params.max_depth == @depth
+      return if @params.max_depth and @params.max_depth <= @depth
       list = (Dir.new dir).children.map { |f| Entry.new f, self }
       @params.sort.call list
       list.reverse! if @params.reverse
