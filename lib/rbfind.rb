@@ -299,10 +299,9 @@ Sort without case sensitivity and preceding dot:
       if args.empty? then
         visit_dir Dir::CUR_DIR
       else
-        args.each { |base|
-          e = Entry.new base, self
-          enter e if handle_error do e.stat end
-        }
+        list = args.map { |base| Entry.new base, self }
+        list.select! { |e| handle_error do e.stat end }
+        list.each { |e| enter e }
       end
     end
 
