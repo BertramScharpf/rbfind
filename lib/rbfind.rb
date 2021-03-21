@@ -301,6 +301,7 @@ Sort without case sensitivity and preceding dot:
       else
         list = args.map { |base| Entry.new base, self }
         list.select! { |e| handle_error do e.stat end }
+        sort_entries list
         list.each { |e| enter e }
       end
     end
@@ -344,15 +345,19 @@ Sort without case sensitivity and preceding dot:
     def visit_dir dir
       return if @params.max_depth and @params.max_depth <= @depth
       list = (Dir.new dir).children.map { |f| Entry.new f, self }
+      sort_entries list
+      step_depth do
+        list.each { |e| enter e }
+      end
+    end
+
+    def sort_entries list
       @params.sort.call list
       list.reverse! if @params.reverse
       if @params.dirs then
-        list = list.partition { |e| e.rstat.directory? rescue nil }
+        list.replace list.partition { |e| e.rstat.directory? rescue nil }
         list.reverse! if @params.depth_first
         list.flatten!
-      end
-      step_depth do
-        list.each { |e| enter e }
       end
     end
 
