@@ -270,12 +270,12 @@ Sort without case sensitivity and preceding dot:
 
     private
 
-    Params = Struct.new :max_depth, :depth_first, :follow,
+    Params = Struct.new :max_depth, :args_depth, :depth_first, :follow,
                             :sort, :dirs, :reverse, :error, :block
 
-    def initialize max_depth: nil, depth_first: nil, follow: nil,
+    def initialize max_depth: nil, args_depth: false, depth_first: nil, follow: nil,
                             sort: true, dirs: false, reverse: false, error: nil, &block
-      @params = Params.new max_depth, depth_first, follow,
+      @params = Params.new max_depth, args_depth, depth_first, follow,
                   (sort_parser sort), dirs, reverse, error, block
       @start = Time.instance_eval { @start = Time.now }
       Time.instance_eval { @start = Time.now }
@@ -302,7 +302,9 @@ Sort without case sensitivity and preceding dot:
         list = args.map { |base| Entry.new base, self }
         list.select! { |e| handle_error do e.stat end }
         sort_entries list
-        list.each { |e| enter e }
+        step_depth_args do
+          list.each { |e| enter e }
+        end
       end
     end
 
@@ -317,6 +319,16 @@ Sort without case sensitivity and preceding dot:
       yield
     ensure
       @depth -= 1
+    end
+
+    def step_depth_args
+      if @params[ :args_depth] then
+        step_depth do
+          yield
+        end
+      else
+        yield
+      end
     end
 
     def enter elem
