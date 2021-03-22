@@ -240,10 +240,10 @@ module RbFind
         "--" stops option processing.
 
         The last argument is a block that will be executed on every found
-        file object. It may be omitted; then "puts path" is assumed or "cpath"
-        in case the output is a terminal.
+        file object. It may be omitted; then "puts path" is assumed, or
+        "puts cpath" in case the output is a terminal.
 
-        Default sort order is alphabetical.
+        Default sort order is by name.
       EOT
     end
 
