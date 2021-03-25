@@ -93,7 +93,7 @@ module RbFind
           when '--time'      then @params[ :sort] = proc { mtime } ; @params[ :reverse] = true
           when '--size'      then @params[ :sort] = proc { size  } ; @params[ :reverse] = true
           when '--dirs'      then @params[ :dirs] = true
-          when '--reverse'   then @params[ :reverse] = true
+          when '--reverse'   then @params[ :reverse] = !@params[ :reverse]
           when '--require'   then require arg
           when '--puts-path' then @puts = true
           when '--ls-l'      then @puts = :ls  ; @wds = 6 ; @wd = 6
