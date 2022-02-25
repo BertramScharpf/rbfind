@@ -56,7 +56,7 @@ module RbFind
       w = calc_widths
       rs.each { |r|
         j = (w.zip @heads, r).map { |v,(_,a),c|
-          v ||= ""
+          c ||= ""
           case a
             when -1 then c.ljust  v
             when  0 then c.center v
