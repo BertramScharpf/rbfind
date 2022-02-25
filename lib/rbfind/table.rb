@@ -95,7 +95,13 @@ module RbFind
     def calc_widths
       w = @heads.map { 0 }
       @rows.each { |r|
-        w = (w.zip r).map { |i,c| j = c.length ; j > i ? j : i }
+        w = (w.zip r).map { |i,c|
+          if c then
+            j = c.length
+            i = j if j > i
+          end
+          i
+        }
       }
       w
     end
