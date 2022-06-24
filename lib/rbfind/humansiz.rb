@@ -103,19 +103,20 @@ end
 
 class Time
 
-  TIME_UNITS = [ "seconds", 60, "minutes", 60, "hours", 24, "days", 7, "weeks", ]
+  TIME_UNITS = { seconds: 60, minutes: 60, hours: 24, days: 7, weeks: nil }
   class <<self
     def to_unit n
-      u = TIME_UNITS.each_slice 2 do |nam,val|
+      u = TIME_UNITS.each_pair do |nam,val|
         break nam if not val or n < val
         n /= val
       end
       "#{n}#{u[0]}"
     end
     def to_sec num, unit
-      TIME_UNITS.each_slice 2 do |nam,val|
+      TIME_UNITS.each_pair do |nam,val|
         return num if nam.start_with? unit
-        num *= val
+        num *= val.to_i
+        num.nonzero? or break
       end
       raise "No time unit: #{unit}."
     end
