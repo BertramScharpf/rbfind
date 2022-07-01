@@ -250,56 +250,56 @@ module RbFind
     def usage_examples
       usage
       puts <<~'EOT'
-      Examples:
-        $ rbfind -p 'file and age < 5.m'
-        $ rbfind -p 'file and age > 1.d'
-        $ rbfind -p '(90.d .. 183.d) === age'
+        Examples:
+          $ rbfind -p 'file and age < 5.m'
+          $ rbfind -p 'file and age > 1.d'
+          $ rbfind -p '(90.d .. 183.d) === age'
 
-        $ rbfind -Cg require
-        $ rbfind -Cp
-        $ rbfind 'filesize < 100.kB and grep /require/'
-        $ rbfind -g 'define\s*ALLOC_N'
-        $ rbfind myproject -e rb -l '~/require/ and puts $_'
+          $ rbfind -Cg require
+          $ rbfind -Cp
+          $ rbfind 'filesize < 100.kB and grep /require/'
+          $ rbfind -g 'define\s*ALLOC_N'
+          $ rbfind myproject -e rb -l '~/require/ and puts $_'
 
-        $ rbfind -pe '.rb c h'
-        $ rbfind /usr/include -e .h -g EACCES
-        $ rbfind -d -m3 -- /mnt/data
-        $ rbfind 'filesize > 10.MiB and colsep size.to_hib, path'
+          $ rbfind -pe '.rb c h'
+          $ rbfind /usr/include -e .h -g EACCES
+          $ rbfind -d -m3 -- /mnt/data
+          $ rbfind 'filesize > 10.MiB and colsep size.to_hib, path'
 
-        $ rbfind -U "name =~ /^\.*/ ; $'.downcase"
-        $ rbfind -B '$s=0' -E 'puts $s.to_h' 'filesize {|s|$s+=s}'
-        $ rbfind 'puts path if ext == ".rb"'
-        $ rbfind -p 'ext == ".rb"'
-        $ rbfind /usr/include -p -D '\.h$' -l '~/EACCES/'
-        $ rbfind /usr/include -pD 'pg|pq|postgres' dir
-        $ rbfind 'no_svn ; puts path'
-        $ rbfind 'prune if name == ".svn" ; puts path'
-        $ rbfind -p 'prune if name == ".svn"'
-        $ rbfind myproject 'name[/\.rb$/] and lines { |l,i| l=~/require/ and puts l }'
-        # rbfind /etc 'lines { |l,| l["192.168."] and (puts path ; break) }'
-        $ rbfind /etc 'readable? or raise "Access denied: #{path}" ;
-        >              lines { |l,| l["192.168."] and (puts path ; break) }'
+          $ rbfind -U "name =~ /^\.*/ ; $'.downcase"
+          $ rbfind -B '$s=0' -E 'puts $s.to_h' 'filesize {|s|$s+=s}'
+          $ rbfind 'puts path if ext == ".rb"'
+          $ rbfind -p 'ext == ".rb"'
+          $ rbfind /usr/include -p -D '\.h$' -l '~/EACCES/'
+          $ rbfind /usr/include -pD 'pg|pq|postgres' dir
+          $ rbfind 'no_svn ; puts path'
+          $ rbfind 'prune if name == ".svn" ; puts path'
+          $ rbfind -p 'prune if name == ".svn"'
+          $ rbfind myproject 'name[/\.rb$/] and lines { |l,i| l=~/require/ and puts l }'
+          # rbfind /etc 'lines { |l,| l["192.168."] and (puts path ; break) }'
+          $ rbfind /etc 'readable? or raise "Access denied: #{path}" ;
+          >              lines { |l,| l["192.168."] and (puts path ; break) }'
 
-        $ rbfind 'col_sep stype+modes, size.w10, path'
-        $ rbfind 'tab_sep stype+modes, size.w10, path'
-        $ rbfind 'spc_sep stype+modes, size.to_h, user, group, mtime.lsish, path'
-        $ rbfind 'p stype+modes, size.to_h, user, group, mtime.lsish, path'
-        $ rbfind 'p stype+modes, size.to_h, user, group, mtime!, path'
-        $ rbfind 'p stype+modes, size.to_h, user, group, mtime.i, path'
-        $ rbfind 'p mtime.u, path'
-        $ rbfind 'p modes, user.w8, group.w8, size.w8, cpath + carrow.to_s'
+          $ rbfind 'col_sep stype+modes, size.w10, path'
+          $ rbfind 'tab_sep stype+modes, size.w10, path'
+          $ rbfind 'spc_sep stype+modes, size.to_h, user, group, mtime.lsish, path'
+          $ rbfind 'p stype+modes, size.to_h, user, group, mtime.lsish, path'
+          $ rbfind 'p stype+modes, size.to_h, user, group, mtime!, path'
+          $ rbfind 'p stype+modes, size.to_h, user, group, mtime.i, path'
+          $ rbfind 'p mtime.u, path'
+          $ rbfind 'p modes, user.w8, group.w8, size.w8, cpath + carrow.to_s'
 
-        $ rbfind 'p digest_md5, size.w8, path'
-        $ rbfind 'p digest_sha256, size.w8, path'
+          $ rbfind 'p digest_md5, size.w8, path'
+          $ rbfind 'p digest_sha256, size.w8, path'
 
-        $ rbfind 'rename name.downcase'
-        $ rbfind 'ext == ".tgz" and rename without_ext+".tar.gz"'
+          $ rbfind 'rename name.downcase'
+          $ rbfind 'ext == ".tgz" and rename without_ext+".tar.gz"'
 
-        See the RbFind documentation or the "rbfind.rb" source file for more
-        sophisticated examples and for a full list of file examination methods.
+          See the RbFind documentation or the "rbfind.rb" source file for more
+          sophisticated examples and for a full list of file examination methods.
 
-        Valid units are 1.s, 1.m, 1.h, 1.d, 1.w for time values and
-        1.kB == 1000, 1.kiB == 1024, 1.MB, 1.MiB for file sizes.
+          Valid units are 1.s, 1.m, 1.h, 1.d, 1.w for time values and
+          1.kB == 1000, 1.kiB == 1024, 1.MB, 1.MiB for file sizes.
       EOT
     end
 
