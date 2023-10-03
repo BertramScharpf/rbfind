@@ -466,7 +466,7 @@ end
 class Integer
   # convenient formatting, right justification
   def method_missing sym, *args
-    case sym.to_s   # .to_s for Ruby 1.8
+    case sym
       when /\Aw(\d+)/  then "%#{$1}d" % self
       when /\Aw_(\d+)/ then to_g.rjust $1.to_i
       else                  super
@@ -477,7 +477,7 @@ end
 class String
   # convenient formatting, left justification
   def method_missing sym, *args
-    case sym.to_s   # .to_s for Ruby 1.8
+    case sym
       when /\Aw_?(\d+)/ then ljust $1.to_i
       else                   super
     end
@@ -497,7 +497,7 @@ class NilClass
   def between? min, max ; false ; end
 
   def method_missing sym, *args
-    case sym.to_s   # .to_s for Ruby 1.8
+    case sym
       when /\Aw_?(\d+)/ then " "*$1.to_i
       else                   super
     end
