@@ -14,7 +14,7 @@ module RbFind
           when />\z/  then +1
           when /\^\z/ then  0
           when /<?\z/ then -1
-        end
+          end
         [ $`, a]
       }
       @rows = []
@@ -58,9 +58,9 @@ module RbFind
         j = (w.zip @heads, r).map { |v,(_,a),c|
           c ||= ""
           case a
-            when -1 then c.ljust  v
-            when  0 then c.center v
-            when +1 then c.rjust  v
+          when -1 then c.ljust  v
+          when  0 then c.center v
+          when +1 then c.rjust  v
           end
         }
         l = j.join " "
@@ -120,9 +120,9 @@ module RbFind
 
     def html_align a
       case a
-        when -1 then "left"
-        when  0 then "center"
-        when +1 then "right"
+      when -1 then "left"
+      when  0 then "center"
+      when +1 then "right"
       end
     end
 

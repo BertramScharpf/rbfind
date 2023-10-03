@@ -34,29 +34,29 @@ class File
 
     def stype
       case mode >> 12
-        when 001 then "p"
-        when 002 then "c"
-        when 004 then "d"
-        when 006 then "b"
-        when 010 then "-"
-        when 012 then "l"
-        when 014 then "s"
-        when 016 then "w"
-        else          "?"
+      when 001 then "p"
+      when 002 then "c"
+      when 004 then "d"
+      when 006 then "b"
+      when 010 then "-"
+      when 012 then "l"
+      when 014 then "s"
+      when 016 then "w"
+      else          "?"
       end
     end
 
     def suffix
       case mode >> 12
-        when 001 then "|"
-        when 002 then " "
-        when 004 then "/"
-        when 006 then " "
-        when 010 then executable? ? "*" : " "
-        when 012 then "@"
-        when 014 then "="
-        when 016 then "%"
-        else          "?"
+      when 001 then "|"
+      when 002 then " "
+      when 004 then "/"
+      when 006 then " "
+      when 010 then executable? ? "*" : " "
+      when 012 then "@"
+      when 014 then "="
+      when 016 then "%"
+      else          "?"
       end
     end
 

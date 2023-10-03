@@ -284,10 +284,10 @@ Sort without case sensitivity and preceding dot:
 
     def sort_parser st
       case st
-        when Proc       then proc { |l| l.sort_by! { |e| e.instance_eval &st } }
-        when String     then proc { |l| l.sort_by! { |e| e.instance_eval st  } }
-        when nil, false then proc { }
-        else                 proc { |l| l.sort_by! { |e| e.name } }
+      when Proc       then proc { |l| l.sort_by! { |e| e.instance_eval &st } }
+      when String     then proc { |l| l.sort_by! { |e| e.instance_eval st  } }
+      when nil, false then proc { }
+      else                 proc { |l| l.sort_by! { |e| e.name } }
       end
     end
 
@@ -397,9 +397,9 @@ Sort without case sensitivity and preceding dot:
       yield
     rescue
       case @params.error
-        when Proc   then @params.error.call
-        when String then instance_eval @params.error
-        else             raise
+      when Proc   then @params.error.call
+      when String then instance_eval @params.error
+      else             raise
       end
       nil
     end
@@ -660,9 +660,9 @@ Sort without case sensitivity and preceding dot:
 
     def grep re, color = nil
       case color
-        when /\A\d+(?:;\d+)*\z/, nil, false then
-        when true then color = "31;1"  # red
-        else           raise "Illegal color spec: #{color}"
+      when /\A\d+(?:;\d+)*\z/, nil, false then
+      when true then color = "31;1"  # red
+      else           raise "Illegal color spec: #{color}"
       end
       lines { |l,i|
         l.scrub!
@@ -795,7 +795,7 @@ Sort without case sensitivity and preceding dot:
         when 016 then                       13
         when nil then                        1
         else                                14
-      end
+        end
       self.class.colored arg, code
     end
 
@@ -803,8 +803,8 @@ Sort without case sensitivity and preceding dot:
       # Overwrite this to define custom colors
       # Example:
       #   case ext
-      #     when ".png", /\.jpe?g$/, /\.tiff?$/ then 15
-      #     when /\.tar\.(gz|bz2)$/             then 16
+      #   when ".png", /\.jpe?g$/, /\.tiff?$/ then 15
+      #   when /\.tar\.(gz|bz2)$/             then 16
       #   end
     end
 
@@ -832,11 +832,11 @@ Sort without case sensitivity and preceding dot:
             fg, bg = $~.captures.map { |x| x.downcase.ord - ?a.ord }
             a = []
             case fg
-              when 0..7 then a.push 30 + fg
+            when 0..7 then a.push 30 + fg
             end
             a.push 1 if $1 == $1.upcase
             case bg
-              when 0..7 then a.push 40 + bg
+            when 0..7 then a.push 40 + bg
             end
             e = a.join ";"
             cols.push e
