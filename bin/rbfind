@@ -44,6 +44,7 @@ module RbFind
       [ %w(--puts-path -p), nil,  "do 'puts path/cpath' on true block"],
       [ %w(--ls-l      -P), nil,  "do 'ls -l' style output on true block"],
       [ %w(--long      -Q), nil,  "alternate long format on true block"],
+      [ %w(--humanage  -H), nil,  "long format with human readable ages"],
       [ %w(--ino       -J), nil,  "show inodes and number of hard links"],
       [ %w(--wider     -+), nil,  "widen fields in long output format"],
       [ %w(--slash     -/), nil,  "append a slash to directory names"],
@@ -98,6 +99,7 @@ module RbFind
           when '--puts-path' then @puts = true
           when '--ls-l'      then @puts = :ls  ; @wds = 6 ; @wd = 6
           when '--long'      then @puts = :alt ; @wds = 7 ; @wd = 4
+          when '--humanage'  then @puts = :hum ; @wds = 7 ; @wd = 4
           when '--ino'       then @puts = :ino ; @wds = 8 ; @wd = 2
           when '--wider'     then @wd and @wd += 2.succ ; @wds and @wds += @puts != :ls ? 4 : 3
           when '--slash'     then @slash = true
@@ -171,6 +173,9 @@ module RbFind
               when :alt then
                 "spcsep stype+modes, user!.w#@wd, group!.w#@wd, size.w_#@wds, " +
                   "mtime.long,  #{opath} + #{co ? 'carrow' : 'arrow'}.to_s"
+              when :hum then
+                "spcsep stype+modes, user!.w#@wd, group!.w#@wd, size.w_#@wds, " +
+                  "mage.t.r4,   #{opath} + #{co ? 'carrow' : 'arrow'}.to_s"
               when :ino then
                 "spcsep ino.w#@wds, nlink.w#@wd, #{opath}"
               else
@@ -473,10 +478,11 @@ class Integer
 end
 
 class String
-  # convenient formatting, left justification
+  # convenient formatting, left and right justification
   def method_missing sym, *args
     case sym
       when /\Aw_?(\d+)/ then ljust $1.to_i
+      when /\Ar_?(\d+)/ then rjust $1.to_i
       else                   super
     end
   end
@@ -496,8 +502,8 @@ class NilClass
 
   def method_missing sym, *args
     case sym
-      when /\Aw_?(\d+)/ then " "*$1.to_i
-      else                   super
+      when /\A[wr]_?(\d+)/ then " "*$1.to_i
+      else                      super
     end
   end
 end
