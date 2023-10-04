@@ -211,7 +211,7 @@ module RbFind
         @block = [ @block]
         @puts and @block = [ "if (", @block, ") then", [ "colsep #{opath}, num, line"], "end" ]
         @real and pre_block "break if ~/\\0/o"
-        @block = [ "lines { |line,num|", @block, "}"]
+        @block = [ "lines { |line,num|", [ "$_, $. = line, num"], @block, "}"]
 
       when :grep then
         ic = Regexp::IGNORECASE if @icase

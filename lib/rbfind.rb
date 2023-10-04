@@ -386,7 +386,6 @@ Sort without case sensitivity and preceding dot:
     def call_block
       handle_error do
         begin
-          $_, $. = @current.name, @count
           @current.instance_eval &@params.block
         rescue Done
         end
@@ -651,7 +650,6 @@ Sort without case sensitivity and preceding dot:
         file.each_line { |l|
           l.chomp!
           n += 1
-          $_, $. = l, n
           r ||= true if yield l, n
         }
         r
