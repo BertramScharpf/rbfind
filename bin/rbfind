@@ -60,6 +60,7 @@ module RbFind
       [ %w(--ext       -e), :lst, "skip all filename extensions but these"],
       [ %w(--visible   -I), nil,  "skip all hidden (starting with .dot)"],
       [ %w(--all       -a), nil,  "all, including hidden (starting with .dot)"],
+      [ %w(--icase     -i), nil,  "ignore case in file and path matches"],
       [ %w(--nodirs    -N), nil,  "skip directories"],
       [ %w(--begin     -B), :blk, "eval block before begin"],
       [ %w(--end       -E), :blk, "eval block after end"],
@@ -101,7 +102,7 @@ module RbFind
         when '--long'      then @puts = :alt ; @wds = 7 ; @wd = 4
         when '--humanage'  then @puts = :hum ; @wds = 7 ; @wd = 4
         when '--ino'       then @puts = :ino ; @wds = 8 ; @wd = 2
-        when '--wider'     then @wd and @wd += 2.succ ; @wds and @wds += @puts != :ls ? 4 : 3
+        when '--wider'     then @wd and @wd += 2 ; @wds and @wds += @puts != :ls ? 4 : 3
         when '--slash'     then @slash = true
         when '--lines'     then @lines = :plain ;                 @block = arg
         when '--reallines' then @lines = :plain ; @real = true ;  @block = arg
@@ -115,10 +116,11 @@ module RbFind
         when '--ext'       then @ext = arg
         when '--visible'   then @visible = true
         when '--all'       then @visible = false
+        when '--icase'     then @icase = true
         when '--nodirs'    then @nodirs = true
         when '--begin'     then @blkbegin = arg
         when '--end'       then @blkend   = arg
-        when '--file'      then @block = File.read arg
+        when '--file'      then @block = File.open arg do |f| f.each { |l| l.chomp! } end
         when '--encoding'  then e, i = arg.split ":" ; set_encoding e, i
         end
       end
@@ -140,15 +142,64 @@ module RbFind
       exit 8
     end
 
+    def run
+      if @show then
+        show
+      else
+        execute
+      end
+    end
+
+    private
+
+    INDENT = " "*2
+
     def long_fmt ug_bang, grp, time, opath, co
       b = "!" if ug_bang
       g = "_" if grp
-      <<~EOT
-        spcsep stype+modes,
-          user#{b}.w#@wd, group#{b}.w#@wd,
-          size.w#{g}#@wds, #{time},
-          #{opath} + #{co ? 'carrow' : 'arrow'}.to_s
-      EOT
+      [
+        "spcsep stype+modes,",
+        [
+          "user#{b}.w#@wd, group#{b}.w#@wd,",
+          "size.w#{g}#@wds, #{time},",
+          "#{opath} + #{co ? 'carrow' : 'arrow'}.to_s",
+        ]
+      ]
+    end
+
+    def build_re str, flags
+      (Regexp.new str, flags).inspect
+    end
+
+    def build_re_ext flags
+      exts = @ext.split(/ +|,/).map { |e| e.delete_prefix! "." ; e }
+      ej = exts.join '|'
+      str = '\A\.(' + ej + ')\z'
+      (Regexp.new str, flags).inspect
+    end
+
+    def last_arg_not_a_file
+      l = @args.last
+      return unless l
+      return if (File.lstat l rescue false)
+      unless l =~ /[;<>{}\[\]()*?'"!&|]/ then
+        return if l =~ %r(\A[^ /]+/)
+        return if l =~ %r(\A\S*/\w*[^imoxuesn]\w*\b(?!:/))
+      end
+      true
+    end
+
+    def join_code a, ind = 0
+      case a
+      when Array then
+        a.map { |e| join_code e, ind + 1 }.join "\n"
+      else
+        INDENT * ind + a
+      end
+    end
+
+    def pre_block str
+      @block = [ str, *@block]
     end
 
     def build_block
@@ -157,61 +208,49 @@ module RbFind
       @slash and opath << "!"
       case @lines
       when :plain then
-        @puts and @block = "( #@block ) and colsep #{opath}, num, line"
-        @real and @block = "break if ~/\0/o ; #@block"
-        @block = "lines { |line,num| #@block }"
+        @block = [ @block]
+        @puts and @block = [ "if (", @block, ") then", [ "colsep #{opath}, num, line"], "end" ]
+        @real and pre_block "break if ~/\\0/o"
+        @block = [ "lines { |line,num|", @block, "}"]
 
       when :grep then
-        re = Regexp.new @block, @icase && Regexp::IGNORECASE
-        @block = "grep %r#{re.inspect}"
-        @block << ", true" if co
-        @block << " ; $stdout.flush" unless $stdout.tty?
-        @binary or @block = "not binary? and (#@block)"
+        ic = Regexp::IGNORECASE if @icase
+        color = ", true" if co
+        @block = [ "grep %r#{build_re @block, ic}#{color}"]
+        @block.push "$stdout.flush" unless $stdout.tty?
+        @binary or @block = [ "unless binary? then", @block, "end"]
 
       else
-        @block ||= if @args.last and not (File.lstat @args.last rescue false) then
-          @args.pop.dup
-        else
-          @puts ||= true
-          "true"
+        unless @block then
+          if last_arg_not_a_file then
+            @block = @args.pop
+          else
+            @puts ||= true
+          end
         end
         if @puts then
-          @block = "( #@block ) and "
-          @block << case @puts
+          cond = @block
+          @block = case @puts
             when :ls  then long_fmt false, false, "mtime.lsish", opath, co
             when :alt then long_fmt true,  true,  "mtime.long",  opath, co
             when :hum then long_fmt true,  true,  "mage.t.r4",   opath, co
-            when :ino then "spcsep ino.w#@wds, nlink.w#@wd, #{opath}"
-            else           "puts #{opath}"
+            when :ino then [ "spcsep ino.w#@wds, nlink.w#@wd, #{opath}"]
+            else           [ "puts #{opath}"]
             end
+          @block = [ "if (", [ cond], ") then", @block, "end"] if cond
         end
 
       end
 
-      osic = File::ALT_SEPARATOR&&Regexp::IGNORECASE
-      if @skip then
-        re = Regexp.new @skip, osic
-        @block.insert 0, "done if name =~ #{re.inspect} ; "
-      end
+      osic = Regexp::IGNORECASE if File::ALT_SEPARATOR || @icase
+      @skip   and pre_block "done if     name =~ #{build_re @skip,   osic}"
+      @demand and pre_block "done unless name =~ #{build_re @demand, osic}"
+      @ext    and pre_block "done unless ext =~ #{build_re_ext osic}"
 
-      if @demand then
-        re = Regexp.new @demand, osic
-        @block.insert 0, "done unless name =~ #{re.inspect} ; "
-      end
-
-      if @ext then
-        re = Regexp.new '\A\.(' +
-          @ext.split(/ +|,/).map { |e| e[ /\A\.?(.*)\z/, 1] }.join('|') +
-          ')\z', osic
-        @block.insert 0, "ext =~ #{re.inspect} or done ; "
-      end
-
-      @visible and @block.insert 0, "visible? or done ; "
-
-      @nodirs and @block.insert 0, "done if dir? ; "
-
-      @vcs and @block.insert 0, "no_vcs ; "
-      @vim and @block.insert 0, "vimswap? and done ; "
+      @visible and pre_block "done unless visible?"
+      @nodirs  and pre_block "done if dir?"
+      @vcs     and pre_block "no_vcs"
+      @vim     and pre_block "done if vimswap?"
 
       @params[ :error] = proc do
         case $!
@@ -220,14 +259,6 @@ module RbFind
         when ArgumentError        then raise
         else                           show_error $!
         end
-      end
-    end
-
-    def run
-      if @show then
-        show
-      else
-        execute
       end
     end
 
@@ -365,7 +396,7 @@ module RbFind
     def execute
       error_handle do
         eval @blkbegin if @blkbegin
-        b = @block
+        b = join_code @block
         Walk.run *@args, **@params do instance_eval b end
         eval @blkend   if @blkend
       end
@@ -377,10 +408,9 @@ module RbFind
       puts "parameters:"
       @params.each { |k,v| puts_val k, "=", v }.any? or puts_val "(none)"
       puts "block:"
-      @block.each_line { |l| puts_val l }
+      c = join_code @block, 1
+      puts c
     end
-
-    INDENT = " "*2
 
     def puts_val *args
       l = [ INDENT, *args].join ""
