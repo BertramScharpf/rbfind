@@ -416,6 +416,8 @@ Sort without case sensitivity and preceding dot:
       @path = join_path @name
     end
 
+    def inspect ; "<##{self.class} #@path>" ; end
+
     protected
     attr_reader :prev
     private
