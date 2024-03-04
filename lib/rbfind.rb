@@ -356,7 +356,7 @@ Sort without case sensitivity and preceding dot:
 
     def visit_dir dir
       return if @params.max_depth and @params.max_depth <= @depth
-      list = (Dir.new dir).children.map { |f| Entry.new f, self }
+      list = Dir.open dir do |d| d.children.map { |f| Entry.new f, self } end
       sort_entries list
       step_depth do
         list.each { |e| enter e }
@@ -566,7 +566,7 @@ Sort without case sensitivity and preceding dot:
     # or not accessible, +nil+ is returned.
     #
     def empty?
-      (Dir.new @path).each_child { |f| return false }
+      Dir.open @path do |d| d.each_child { |f| return false } end
       true
     rescue Errno::ENOTDIR
     end
@@ -591,7 +591,7 @@ Sort without case sensitivity and preceding dot:
     # +nil+ is returned.
     #
     def entries
-      (Dir.new @path).children
+      Dir.open @path do |d| d.children end
     rescue Errno::ENOTDIR
     end
     alias children entries
