@@ -66,62 +66,66 @@ module RbFind
       [ %w(--end       -E), :blk, "eval block after end"],
       [ %w(--file      -f), :nam, "read block expression from file"],
       [ %w(--encoding  -K), :str, "encoding extern[:intern] (same as ruby -E)"],
+      [ %w(--width-user  ), :num, "width of user field"],
+      [ %w(--width-size  ), :num, "width of size field"],
     ]
 
     def initialize
       @params = {}
       envopts = ENV[ "RBFIND_OPTIONS"]
       $*.unshift *envopts.split if envopts
-      opts = GetoptLong.new *OPTIONS.map { |(long,short),arg,|
-        [long,short,(arg ? GetoptLong::REQUIRED_ARGUMENT : GetoptLong::NO_ARGUMENT)]
+      opts = GetoptLong.new *OPTIONS.map { |names,arg,|
+        [*names,(arg ? GetoptLong::REQUIRED_ARGUMENT : GetoptLong::NO_ARGUMENT)]
       }
       opts.ordering = GetoptLong::PERMUTE
       opts.quiet = true
       opts.each do |opt,arg|
         case opt
-        when '--help'      then usage          ; exit
-        when '--version'   then puts PROGRAM   ; exit
-        when '--examples'  then usage_examples ; exit
-        when '--verbose'   then @verbose = true
-        when '--show'      then @show = true
-        when '--bw'        then @color = false
-        when '--colored'   then @color = true
-        when '--depth'     then @params[ :depth_first] = true
-        when '--maxdepth'  then @params[ :max_depth] = arg.to_i.nonzero?
-        when '--argsdepth' then @params[ :args_depth] = true
-        when '--follow'    then @params[ :follow] = true
-        when '--nosort'    then @params[ :sort] = false
-        when '--sort-by'   then @params[ :sort] = instance_eval "proc { #{arg} }"
-        when '--time'      then @params[ :sort] = proc { mtime } ; @params[ :reverse] = true
-        when '--size'      then @params[ :sort] = proc { size  } ; @params[ :reverse] = true
-        when '--dirs'      then @params[ :dirs] = true
-        when '--reverse'   then @params[ :reverse] = !@params[ :reverse]
-        when '--require'   then require arg
-        when '--puts-path' then @puts = true
-        when '--ls-l'      then @puts = :ls  ; @wds = 6 ; @wd = 6
-        when '--long'      then @puts = :alt ; @wds = 7 ; @wd = 4
-        when '--humanage'  then @puts = :hum ; @wds = 7 ; @wd = 4
-        when '--ino'       then @puts = :ino ; @wds = 8 ; @wd = 2
-        when '--wider'     then @wd and @wd += 2 ; @wds and @wds += @puts != :ls ? 4 : 3
-        when '--slash'     then @slash = true
-        when '--lines'     then @lines = :plain ;                 @block = arg
-        when '--reallines' then @lines = :plain ; @real = true ;  @block = arg
-        when '--grep'      then @lines = :grep  ;                 @block = arg
-        when '--igrep'     then @lines = :grep  ; @icase = true ; @block = arg
-        when '--binary'    then @binary = true
-        when '--no-vcs'    then @vcs = true
-        when '--no-swap'   then @vim = true
-        when '--skip'      then @skip = arg
-        when '--demand'    then @demand = arg
-        when '--ext'       then @ext = arg
-        when '--visible'   then @visible = true
-        when '--all'       then @visible = false
-        when '--icase'     then @icase = true
-        when '--nodirs'    then @nodirs = true
-        when '--begin'     then @blkbegin = arg
-        when '--end'       then @blkend   = arg
-        when '--file'      then @block = File.open arg do |f| f.each { |l| l.chomp! } end
-        when '--encoding'  then e, i = arg.split ":" ; set_encoding e, i
+        when '--help'       then usage          ; exit
+        when '--version'    then puts PROGRAM   ; exit
+        when '--examples'   then usage_examples ; exit
+        when '--verbose'    then @verbose = true
+        when '--show'       then @show = true
+        when '--bw'         then @color = false
+        when '--colored'    then @color = true
+        when '--depth'      then @params[ :depth_first] = true
+        when '--maxdepth'   then @params[ :max_depth] = arg.to_i.nonzero?
+        when '--argsdepth'  then @params[ :args_depth] = true
+        when '--follow'     then @params[ :follow] = true
+        when '--nosort'     then @params[ :sort] = false
+        when '--sort-by'    then @params[ :sort] = instance_eval "proc { #{arg} }"
+        when '--time'       then @params[ :sort] = proc { mtime } ; @params[ :reverse] = true
+        when '--size'       then @params[ :sort] = proc { size  } ; @params[ :reverse] = true
+        when '--dirs'       then @params[ :dirs] = true
+        when '--reverse'    then @params[ :reverse] = !@params[ :reverse]
+        when '--require'    then require arg
+        when '--puts-path'  then @puts = true
+        when '--ls-l'       then @puts = :ls  ; @wds ||= 6 ; @wdu ||= 6
+        when '--long'       then @puts = :alt ; @wds ||= 7 ; @wdu ||= 4
+        when '--humanage'   then @puts = :hum ; @wds ||= 7 ; @wdu ||= 4
+        when '--ino'        then @puts = :ino ; @wds ||= 8 ; @wdu ||= 2
+        when '--wider'      then @wdu and @wdu += 2 ; @wds and @wds += @puts != :ls ? 4 : 3
+        when '--slash'      then @slash = true
+        when '--lines'      then @lines = :plain ;                 @block = arg
+        when '--reallines'  then @lines = :plain ; @real = true ;  @block = arg
+        when '--grep'       then @lines = :grep  ;                 @block = arg
+        when '--igrep'      then @lines = :grep  ; @icase = true ; @block = arg
+        when '--binary'     then @binary = true
+        when '--no-vcs'     then @vcs = true
+        when '--no-swap'    then @vim = true
+        when '--skip'       then @skip = arg
+        when '--demand'     then @demand = arg
+        when '--ext'        then @ext = arg
+        when '--visible'    then @visible = true
+        when '--all'        then @visible = false
+        when '--icase'      then @icase = true
+        when '--nodirs'     then @nodirs = true
+        when '--begin'      then @blkbegin = arg
+        when '--end'        then @blkend   = arg
+        when '--file'       then @block = File.open arg do |f| f.each { |l| l.chomp! } end
+        when '--encoding'   then e, i = arg.split ":" ; set_encoding e, i
+        when '--width-user' then @wdu = arg.to_i.nonzero?
+        when '--width-size' then @wds = arg.to_i.nonzero?
         end
       end
       @args = $*.dup
@@ -160,7 +164,7 @@ module RbFind
       [
         "spcsep stype+modes,",
         [
-          "user#{b}.w#@wd, group#{b}.w#@wd,",
+          "user#{b}.w#@wdu, group#{b}.w#@wdu,",
           "size.w#{g}#@wds, #{time},",
           "#{opath} + #{co ? 'carrow' : 'arrow'}.to_s",
         ]
@@ -234,7 +238,7 @@ module RbFind
             when :ls  then long_fmt false, false, "mtime.lsish", opath, co
             when :alt then long_fmt true,  true,  "mtime.long",  opath, co
             when :hum then long_fmt true,  true,  "mage.t.r4",   opath, co
-            when :ino then [ "spcsep ino.w#@wds, nlink.w#@wd, #{opath}"]
+            when :ino then [ "spcsep ino.w8, nlink.w2, #{opath}"]
             else           [ "puts #{opath}"]
             end
           @block = [ "if (", [ cond], ") then", @block, "end"] if cond
