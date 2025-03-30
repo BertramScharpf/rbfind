@@ -491,6 +491,8 @@ Sort without case sensitivity and preceding dot:
     def aage ; @walk.start - stat.atime ; end
     def mage ; @walk.start - stat.mtime ; end
     def cage ; @walk.start - stat.ctime ; end
+    def birthage ; @walk.start - stat.birthtime ; end
+    alias bage birthage
     alias age mage
 
     # :call-seq:
