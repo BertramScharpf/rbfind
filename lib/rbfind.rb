@@ -490,10 +490,18 @@ Sort without case sensitivity and preceding dot:
 
     def aage ; @walk.start - stat.atime ; end
     def mage ; @walk.start - stat.mtime ; end
-    def cage ; @walk.start - stat.ctime ; end
-    def birthage ; @walk.start - stat.birthtime ; end
-    alias bage birthage
     alias age mage
+    def cage ; @walk.start - stat.ctime ; end
+
+    # Please consider thoroughly whether you really need this.
+    # https://bugs.ruby-lang.org/issues/21205#change-112494
+    def birthtime
+      stat.birthtime
+    rescue NotImplementedError
+      File.birthtime @path
+    end
+    def birthage ; @walk.start - birthtime ; end
+    alias bage birthage
 
     # :call-seq:
     #    filesize => nil or int
