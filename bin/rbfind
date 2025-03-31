@@ -490,7 +490,7 @@ class Time
   # autoload several formating methods
   def method_missing sym, *args, &block
     super
-  rescue NoMethodError
+  rescue NoMethodError, NameError
     send sym, *args, &block if require "time"
   end
 
