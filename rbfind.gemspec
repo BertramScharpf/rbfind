@@ -20,7 +20,8 @@ Gem::Specification.new do |s|
   s.email             = "<software@bertram-scharpf.de>"
   s.homepage          = "http://www.bertram-scharpf.de/software/rbfind"
 
-  s.requirements      = "just Ruby"
+  s.requirements          = "Just Ruby"
+  s.required_ruby_version = ">= 3.1.0"
 
   s.extensions        = %w(
                         )
