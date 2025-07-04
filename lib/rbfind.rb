@@ -8,7 +8,7 @@ require "rbfind/csv"
 
 module RbFind
 
-  VERSION = "2.13".freeze
+  VERSION = "2.14".freeze
 
 =begin rdoc
 
