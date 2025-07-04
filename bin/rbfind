@@ -202,10 +202,6 @@ module RbFind
       end
     end
 
-    def pre_block str
-      @block = [ str, *@block]
-    end
-
     def build_block
       co = color_on $stdout
       opath = co ? "cpath" : "path"
@@ -214,7 +210,7 @@ module RbFind
       when :plain then
         @block = [ @block]
         @puts and @block = [ "if (", @block, ") then", [ "colsep #{opath}, num, line"], "end" ]
-        @real and pre_block "break if ~/\\0/o"
+        @real and @block.unshift "break if ~/\\0/o"
         @block = [ "lines { |line,num|", [ "$_, $. = line, num"], @block, "}"]
 
       when :grep then
@@ -247,14 +243,14 @@ module RbFind
       end
 
       osic = Regexp::IGNORECASE if File::ALT_SEPARATOR || @icase
-      @skip   and pre_block "done if     name =~ #{build_re @skip,   osic}"
-      @demand and pre_block "done unless name =~ #{build_re @demand, osic}"
-      @ext    and pre_block "done unless ext =~ #{build_re_ext osic}"
+      @skip   and @block.unshift "done if     name =~ #{build_re @skip,   osic}"
+      @demand and @block.unshift "done unless name =~ #{build_re @demand, osic}"
+      @ext    and @block.unshift "done unless ext  =~ #{build_re_ext osic}"
 
-      @visible and pre_block "done unless visible?"
-      @nodirs  and pre_block "done if dir?"
-      @vcs     and pre_block "no_vcs"
-      @vim     and pre_block "done if vimswap?"
+      @visible and @block.unshift "done unless visible?"
+      @nodirs  and @block.unshift "done if dir?"
+      @vcs     and @block.unshift "no_vcs"
+      @vim     and @block.unshift "done if vimswap?"
 
       @params[ :error] = proc do
         case $!
