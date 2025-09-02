@@ -29,6 +29,7 @@ Gem::Specification.new do |s|
                           README
                           lib/rbfind.rb
                           lib/rbfind/core.rb
+                          lib/rbfind/appl.rb
                           lib/rbfind/csv.rb
                           lib/rbfind/humansiz.rb
                           lib/rbfind/table.rb

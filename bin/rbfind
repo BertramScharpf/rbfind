@@ -1,3 +1,4 @@
+#!/usr/bin/env ruby
 #!/usr/bin/ruby
 
 #
@@ -6,13 +7,12 @@
 
 require "rbfind"
 require "rbfind/humansiz"
-require "English"
-require 'getoptlong'
+require 'rbfind/appl'
 
 
 module RbFind
 
-  class Application
+  class RbFindAppl < Application
 
     PROGRAM = <<~EOT
       rbfind #{RbFind::VERSION}  --  A find tool using Ruby
@@ -21,129 +21,65 @@ module RbFind
         License: BSD
     EOT
 
-    OPTIONS = [
-      #    options          arg   description
-      [ %w(--help      -h), nil,  "print this help"],
-      [ %w(--examples  -X), nil,  "print this help and examples"],
-      [ %w(--version   -V), nil,  "print version information"],
-      [ %w(--verbose   -v), nil,  "standard Ruby error reports"],
-      [ %w(--show      -o), nil,  "just show Ruby block built from options"],
-      [ %w(--bw        -w), nil,  "black and white on -p or default output"],
-      [ %w(--colored   -c), nil,  "force color on -p or default output"],
-      [ %w(--depth     -d), nil,  "yield directory after its contents"],
-      [ %w(--maxdepth  -m), :num, "maxium step depth (0 = any)"],
-      [ %w(--argsdepth -A), nil,  "args have depth 1 (not 0)"],
-      [ %w(--follow    -y), nil,  "follow symbolic links"],
-      [ %w(--nosort    -U), nil,  "unsorted"],
-      [ %w(--sort-by   -s), :str, "sort expression"],
-      [ %w(--reverse   -R), nil,  "reverse the sort"],
-      [ %w(--time      -t), nil,  "sort by time, newest first"],
-      [ %w(--size      -S), nil,  "sort by size, largest first"],
-      [ %w(--dirs      -F), nil,  "sort directories before files"],
-      [ %w(--require   -r), :rb,  "require library"],
-      [ %w(--puts-path -p), nil,  "do 'puts path/cpath' on true block"],
-      [ %w(--ls-l      -P), nil,  "do 'ls -l' style output on true block"],
-      [ %w(--long      -Q), nil,  "alternate long format on true block"],
-      [ %w(--humanage  -H), nil,  "long format with human readable ages"],
-      [ %w(--ino       -J), nil,  "show inodes and number of hard links"],
-      [ %w(--wider     -+), nil,  "widen fields in long output format"],
-      [ %w(--slash     -/), nil,  "append a slash to directory names"],
-      [ %w(--lines     -l), :blk, "surround block by 'lines { |$_,$.| ... }'"],
-      [ %w(--reallines -L), :blk, "same as -l but stop at any null character"],
-      [ %w(--grep      -g), :blk, "grep files (implies -pL)"],
-      [ %w(--igrep     -G), :blk, "case insensitive grep"],
-      [ %w(--binary    -b), nil,  "grep even binary files"],
-      [ %w(--no-vcs    -C), nil,  "prune version control dirs (CVS/.svn/.git)"],
-      [ %w(--no-swap   -W), nil,  "ignore Vim swapfiles"],
-      [ %w(--skip      -k), :rgx, "filenames to skip"],
-      [ %w(--demand    -D), :rgx, "skip all filenames but these"],
-      [ %w(--ext       -e), :lst, "skip all filename extensions but these"],
-      [ %w(--visible   -I), nil,  "skip all hidden (starting with .dot)"],
-      [ %w(--all       -a), nil,  "all, including hidden (starting with .dot)"],
-      [ %w(--icase     -i), nil,  "ignore case in file and path matches"],
-      [ %w(--nodirs    -N), nil,  "skip directories"],
-      [ %w(--begin     -B), :blk, "eval block before begin"],
-      [ %w(--end       -E), :blk, "eval block after end"],
-      [ %w(--file      -f), :nam, "read block expression from file"],
-      [ %w(--encoding  -K), :str, "encoding extern[:intern] (same as ruby -E)"],
-      [ %w(--width-user  ), :num, "width of user field"],
-      [ %w(--width-size  ), :num, "width of size field"],
-    ]
+    option %w(h help      ), "print this help"                            do usage          ; raise Exit ; end
+    option %w(X examples  ), "print this help and examples"               do usage_examples ; raise Exit ; end
+    option %w(V version   ), "print version information"                  do puts PROGRAM   ; raise Exit ; end
+    option %w(v verbose   ), "standard Ruby error reports"                do @verbose = true ; end
+    option %w(o show      ), "just show Ruby block built from options"    do @show = true ; end
+    option %w(w bw        ), "black and white on -p or default output"    do @color = false ; end
+    option %w(c colored   ), "force color on -p or default output"        do @color = true ; end
+    option %w(d depth     ), "yield directory after its contents"         do @params[ :depth_first] = true ; end
+    option %w(m maxdepth  ), "maxium step depth (0 = any)"                do |num| @params[ :max_depth] = num.to_i.nonzero? ; end
+    option %w(A argsdepth ), "args have depth 1 (not 0)"                  do @params[ :args_depth] = true ; end
+    option %w(y follow    ), "follow symbolic links"                      do @params[ :follow] = true ; end
+    option %w(U nosort    ), "unsorted"                                   do @params[ :sort] = false ; end
+    option %w(s sort-by   ), "sort expression"                            do |str| @params[ :sort] = instance_eval "proc { #{str} }" ; end
+    option %w(R reverse   ), "reverse the sort"                           do @params[ :reverse] = !@params[ :reverse] ; end
+    option %w(t time      ), "sort by time, newest first"                 do @params[ :sort] = proc { mtime } ; @params[ :reverse] = true ; end
+    option %w(S size      ), "sort by size, largest first"                do @params[ :sort] = proc { size  } ; @params[ :reverse] = true ; end
+    option %w(F dirs      ), "sort directories before files"              do @params[ :dirs] = true ; end
+    option %w(r require   ), "require library"                            do |rb| require rb ; end
+    option %w(x execute   ), "execute block"                              do |b| @block = b ; end
+    option %w(p puts-path ), "do 'puts path/cpath' on true block"         do @puts = true ; end
+    option %w(P ls-l      ), "do 'ls -l' style output on true block"      do @puts = :ls  ; @wds ||= 6 ; @wdu ||= 6 ; end
+    option %w(Q long      ), "alternate long format on true block"        do @puts = :alt ; @wds ||= 7 ; @wdu ||= 4 ; end
+    option %w(H humanage  ), "long format with human readable ages"       do @puts = :hum ; @wds ||= 7 ; @wdu ||= 4 ; end
+    option %w(J ino       ), "show inodes and number of hard links"       do @puts = :ino ; @wds ||= 8 ; @wdu ||= 2 ; end
+    option %w(+ wider     ), "widen fields in long output format"         do @wdu and @wdu += 2 ; @wds and @wds += @puts != :ls ? 4 : 3 ; end
+    option %w(/ slash     ), "append a slash to directory names"          do @slash = true ; end
+    option %w(l lines     ), "surround block by 'lines { |$_,$.| ... }'"  do |blk| @lines = :plain ;                 @block = blk ; end
+    option %w(L reallines ), "same as -l but stop at any null character"  do |blk| @lines = :plain ; @real = true ;  @block = blk ; end
+    option %w(g grep      ), "grep files (implies -pL)"                   do |blk| @lines = :grep  ;                 @block = blk ; end
+    option %w(G igrep     ), "case insensitive grep"                      do |blk| @lines = :grep  ; @icase = true ; @block = blk ; end
+    option %w(b binary    ), "grep even binary files"                     do @binary = true ; end
+    option %w(C no-vcs    ), "prune version control dirs (CVS/.svn/.git)" do @vcs = true ; end
+    option %w(W no-swap   ), "ignore Vim swapfiles"                       do @vim = true ; end
+    option %w(k skip      ), "filenames to skip"                          do |rgx| @skip = rgx ; end
+    option %w(D demand    ), "skip all filenames but these"               do |rgx| @demand = rgx ; end
+    option %w(e ext       ), "skip all filename extensions but these"     do |lst| @ext = lst ; end
+    option %w(I visible   ), "skip all hidden (starting with .dot)"       do @visible = true ; end
+    option %w(a all       ), "all, including hidden (starting with .dot)" do @visible = false ; end
+    option %w(i icase     ), "ignore case in file and path matches"       do @icase = true ; end
+    option %w(N nodirs    ), "skip directories"                           do @nodirs = true ; end
+    option %w(B begin     ), "eval block before begin"                    do |blk| @blkbegin = blk ; end
+    option %w(E end       ), "eval block after end"                       do |blk| @blkend   = blk ; end
+    option %w(f file      ), "read block expression from file"            do |nam| @block = File.open nam do |f| f.each { |l| l.chomp! } end ; end
+    option %w(K encoding  ), "encoding extern[:intern] (same as ruby -E)" do |str| e, i = str.split ":", 2 ; set_encoding e, i ; end
+    option %w(  width-user), "width of user field"                        do |num| @wdu = num.to_i.nonzero? ; end
+    option %w(  width-size), "width of size field"                        do |num| @wds = num.to_i.nonzero? ; end
 
-    def initialize
+    def initialize args
       @params = {}
       envopts = ENV[ "RBFIND_OPTIONS"]
-      $*.unshift *envopts.split if envopts
-      opts = GetoptLong.new *OPTIONS.map { |names,arg,|
-        [*names,(arg ? GetoptLong::REQUIRED_ARGUMENT : GetoptLong::NO_ARGUMENT)]
-      }
-      opts.ordering = GetoptLong::PERMUTE
-      opts.quiet = true
-      opts.each do |opt,arg|
-        case opt
-        when '--help'       then usage          ; exit
-        when '--version'    then puts PROGRAM   ; exit
-        when '--examples'   then usage_examples ; exit
-        when '--verbose'    then @verbose = true
-        when '--show'       then @show = true
-        when '--bw'         then @color = false
-        when '--colored'    then @color = true
-        when '--depth'      then @params[ :depth_first] = true
-        when '--maxdepth'   then @params[ :max_depth] = arg.to_i.nonzero?
-        when '--argsdepth'  then @params[ :args_depth] = true
-        when '--follow'     then @params[ :follow] = true
-        when '--nosort'     then @params[ :sort] = false
-        when '--sort-by'    then @params[ :sort] = instance_eval "proc { #{arg} }"
-        when '--time'       then @params[ :sort] = proc { mtime } ; @params[ :reverse] = true
-        when '--size'       then @params[ :sort] = proc { size  } ; @params[ :reverse] = true
-        when '--dirs'       then @params[ :dirs] = true
-        when '--reverse'    then @params[ :reverse] = !@params[ :reverse]
-        when '--require'    then require arg
-        when '--puts-path'  then @puts = true
-        when '--ls-l'       then @puts = :ls  ; @wds ||= 6 ; @wdu ||= 6
-        when '--long'       then @puts = :alt ; @wds ||= 7 ; @wdu ||= 4
-        when '--humanage'   then @puts = :hum ; @wds ||= 7 ; @wdu ||= 4
-        when '--ino'        then @puts = :ino ; @wds ||= 8 ; @wdu ||= 2
-        when '--wider'      then @wdu and @wdu += 2 ; @wds and @wds += @puts != :ls ? 4 : 3
-        when '--slash'      then @slash = true
-        when '--lines'      then @lines = :plain ;                 @block = arg
-        when '--reallines'  then @lines = :plain ; @real = true ;  @block = arg
-        when '--grep'       then @lines = :grep  ;                 @block = arg
-        when '--igrep'      then @lines = :grep  ; @icase = true ; @block = arg
-        when '--binary'     then @binary = true
-        when '--no-vcs'     then @vcs = true
-        when '--no-swap'    then @vim = true
-        when '--skip'       then @skip = arg
-        when '--demand'     then @demand = arg
-        when '--ext'        then @ext = arg
-        when '--visible'    then @visible = true
-        when '--all'        then @visible = false
-        when '--icase'      then @icase = true
-        when '--nodirs'     then @nodirs = true
-        when '--begin'      then @blkbegin = arg
-        when '--end'        then @blkend   = arg
-        when '--file'       then @block = File.open arg do |f| f.each { |l| l.chomp! } end
-        when '--encoding'   then e, i = arg.split ":" ; set_encoding e, i
-        when '--width-user' then @wdu = arg.to_i.nonzero?
-        when '--width-size' then @wds = arg.to_i.nonzero?
+      if envopts then
+        e = []
+        envopts.scan /"((?:[^"\\]|\\.)*)"|'([^']*)'|(\S+)/ do
+          e.push $1 ? (eval $1) : ($2 || $3)
         end
+        args.unshift *e
       end
-      @args = $*.dup
-      if @args.empty? and not $stdin.tty? then
-        $stdin.each_line { |l|
-          l.chomp!
-          @args.push l
-        }
-      end
+      super args
       build_block
-    rescue GetoptLong::InvalidOption
-      $stderr.puts $!
-      $stderr.puts
-      usage
-      exit 9
-    rescue
-      $stderr.puts $!
-      exit 8
     end
 
     def run
@@ -182,15 +118,13 @@ module RbFind
       (Regexp.new str, flags).inspect
     end
 
-    def last_arg_not_a_file
+    def treat_last_arg_as_file
       l = @args.last
-      return unless l
-      return if (File.lstat l rescue false)
-      unless l =~ /[;<>{}\[\]()*?'"!&|]/ then
-        return if l =~ %r(\A[^ /]+/)
-        return if l =~ %r(\A\S*/\w*[^imoxuesn]\w*\b(?!:/))
-      end
-      true
+      not l or
+        File.exist? l or
+        l.start_with? "." or
+        l !~ /[;<>{}\[\]()*?'"!&|~ ]/ or
+        l =~ %r(/)
     end
 
     def join_code a, ind = 0
@@ -222,22 +156,24 @@ module RbFind
 
       else
         unless @block then
-          if last_arg_not_a_file then
-            @block = @args.pop
-          else
-            @puts ||= true
-          end
-        end
-        if @puts then
-          cond = @block
-          @block = case @puts
-            when :ls  then long_fmt false, false, "mtime.lsish", opath, co
-            when :alt then long_fmt true,  true,  "mtime.long",  opath, co
-            when :hum then long_fmt true,  true,  "mage.t.r4",   opath, co
-            when :ino then [ "spcsep ino.w8, nlink.w2, #{opath}"]
-            else           [ "puts #{opath}"]
+          unless @puts then
+            if treat_last_arg_as_file then
+              @puts = true
+            else
+              @block = @args.pop
             end
-          @block = [ "if (", [ cond], ") then", @block, "end"] if cond
+          end
+          if @puts then
+            cond = @block
+            @block = case @puts
+              when :ls  then long_fmt false, false, "mtime.lsish", opath, co
+              when :alt then long_fmt true,  true,  "mtime.long",  opath, co
+              when :hum then long_fmt true,  true,  "mage.t.r4",   opath, co
+              when :ino then [ "spcsep ino.w8, nlink.w2, #{opath}"]
+              else           [ "puts #{opath}"]
+              end
+            @block = [ "if (", [ cond], ") then", @block, "end"] if cond
+          end
         end
 
       end
@@ -271,12 +207,8 @@ module RbFind
           rbfind [options] path... 'block'
 
       EOT
-      OPTIONS.each { |(long,short),arg,desc|
-        puts "    %-12s %2s  %-5s  %s" % [long,short,arg.to_s.upcase,desc]
-      }
+      self.class.usage
       puts <<~'EOT'
-
-        "--" stops option processing.
 
         The last argument is a block that will be executed on every found
         file object. It may be omitted; then "puts path" is assumed, or
@@ -561,5 +493,5 @@ class Proc
 end
 
 
-RbFind::Application.new.run
+RbFind::RbFindAppl.run
 
