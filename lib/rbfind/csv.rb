@@ -31,6 +31,7 @@ module RbFind
     def csv sep, *args
       e = args.join sep
       Csv.putl e
+      nil
     end
 
 

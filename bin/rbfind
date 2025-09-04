@@ -1,5 +1,4 @@
 #!/usr/bin/env ruby
-#!/usr/bin/ruby
 
 #
 #  rbfind  --  Ruby Find with many features
@@ -40,11 +39,11 @@ module RbFind
     option %w(F dirs      ), "sort directories before files"              do @params[ :dirs] = true ; end
     option %w(r require   ), "require library"                            do |rb| require rb ; end
     option %w(x execute   ), "execute block"                              do |b| @block = b ; end
-    option %w(p puts-path ), "do 'puts path/cpath' on true block"         do @puts = true ; end
-    option %w(P ls-l      ), "do 'ls -l' style output on true block"      do @puts = :ls  ; @wds ||= 6 ; @wdu ||= 6 ; end
-    option %w(Q long      ), "alternate long format on true block"        do @puts = :alt ; @wds ||= 7 ; @wdu ||= 4 ; end
-    option %w(H humanage  ), "long format with human readable ages"       do @puts = :hum ; @wds ||= 7 ; @wdu ||= 4 ; end
-    option %w(J ino       ), "show inodes and number of hard links"       do @puts = :ino ; @wds ||= 8 ; @wdu ||= 2 ; end
+    option %w(p puts-path ), "do 'puts path/cpath' on true block"         do @puts = :plain ; end
+    option %w(P ls-l      ), "do 'ls -l' style output on true block"      do @puts = :ls    ; @wds ||= 6 ; @wdu ||= 6 ; end
+    option %w(Q long      ), "alternate long format on true block"        do @puts = :alt   ; @wds ||= 7 ; @wdu ||= 4 ; end
+    option %w(H humanage  ), "long format with human readable ages"       do @puts = :hum   ; @wds ||= 7 ; @wdu ||= 4 ; end
+    option %w(J ino       ), "show inodes and number of hard links"       do @puts = :ino   ; @wds ||= 8 ; @wdu ||= 2 ; end
     option %w(+ wider     ), "widen fields in long output format"         do @wdu and @wdu += 2 ; @wds and @wds += @puts != :ls ? 4 : 3 ; end
     option %w(/ slash     ), "append a slash to directory names"          do @slash = true ; end
     option %w(l lines     ), "surround block by 'lines { |$_,$.| ... }'"  do |blk| @lines = :plain ;                 @block = blk ; end
@@ -123,8 +122,7 @@ module RbFind
       not l or
         File.exist? l or
         l.start_with? "." or
-        l !~ /[;<>{}\[\]()*?'"!&|~ ]/ or
-        l =~ %r(/)
+        (not l =~ /[;<>{}\[\]()*?'"!&|~ ]/ and l =~ %r(/))
     end
 
     def join_code a, ind = 0
@@ -132,7 +130,7 @@ module RbFind
       when Array then
         a.map { |e| join_code e, ind + 1 }.join "\n"
       else
-        INDENT * ind + a
+        INDENT * ind + a.to_s
       end
     end
 
@@ -156,25 +154,21 @@ module RbFind
 
       else
         unless @block then
-          unless @puts then
-            if treat_last_arg_as_file then
-              @puts = true
-            else
-              @block = @args.pop
-            end
-          end
-          if @puts then
-            cond = @block
-            @block = case @puts
-              when :ls  then long_fmt false, false, "mtime.lsish", opath, co
-              when :alt then long_fmt true,  true,  "mtime.long",  opath, co
-              when :hum then long_fmt true,  true,  "mage.t.r4",   opath, co
-              when :ino then [ "spcsep ino.w8, nlink.w2, #{opath}"]
-              else           [ "puts #{opath}"]
-              end
-            @block = [ "if (", [ cond], ") then", @block, "end"] if cond
+          if treat_last_arg_as_file then
+            @block = "true"
+            @puts ||= :plain
+          else
+            @block = @args.pop
           end
         end
+        output = case @puts
+          when :ls    then long_fmt false, false, "mtime.lsish", opath, co
+          when :alt   then long_fmt true,  true,  "mtime.long",  opath, co
+          when :hum   then long_fmt true,  true,  "mage.t.r4",   opath, co
+          when :ino   then [ "spcsep ino.w8, nlink.w2, #{opath}"]
+          when :plain then [ "puts #{opath}"]
+          end
+        output and @block = [ "if (", [ @block], ") then", output, "end"]
 
       end
 
