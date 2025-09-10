@@ -15,7 +15,7 @@ Gem::Specification.new do |s|
     Full ls-style output support including color.
     Full grep-style output support.
   EOT
-  s.license           = "BSD-2-Clause"
+  s.license           = "BSD-2-Clause+"
   s.authors           = [ "Bertram Scharpf"]
   s.email             = "<software@bertram-scharpf.de>"
   s.homepage          = "http://www.bertram-scharpf.de/software/rbfind"
@@ -23,10 +23,13 @@ Gem::Specification.new do |s|
   s.requirements          = "Just Ruby"
   s.required_ruby_version = ">= 3.1.0"
 
+  s.require_paths     = %w(lib)
+  s.bindir            = "bin"
+
   s.extensions        = %w(
                         )
   s.files             = %w(
-                          README
+                          README.md
                           lib/rbfind.rb
                           lib/rbfind/core.rb
                           lib/rbfind/appl.rb
@@ -38,9 +41,6 @@ Gem::Specification.new do |s|
                           rbfind
                         )
 
-  s.rdoc_options.concat %w(--charset utf-8 --main README)
-  s.extra_rdoc_files  = %w(
-                          LICENSE
-                        )
+  s.extra_rdoc_files  = %w(LICENSE README.md)
 end
 
