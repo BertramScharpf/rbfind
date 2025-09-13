@@ -126,12 +126,18 @@ module RbFind
     end
 
     def join_code a, ind = 0
-      case a
-      when Array then
-        a.map { |e| join_code e, ind + 1 }.join "\n"
-      else
-        INDENT * ind + a.to_s
-      end
+      r = a.map { |e|
+        q = case e
+        when Array then
+          join_code e, ind + 1
+        else
+          INDENT * ind + e.to_s
+        end
+        q.rstrip!
+        q unless q.empty?
+      }
+      r.compact!
+      r.join "\n"
     end
 
     def build_block
@@ -148,7 +154,7 @@ module RbFind
       when :grep then
         ic = Regexp::IGNORECASE if @icase
         color = ", true" if co
-        @block = [ "grep %r#{build_re @block, ic}#{color}"]
+        @block = [ "grep %r#{build_re @block.to_s, ic}#{color}"]
         @block.push "$stdout.flush" unless $stdout.tty?
         @binary or @block = [ "unless binary? then", @block, "end"]
 
