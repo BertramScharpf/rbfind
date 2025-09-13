@@ -62,7 +62,7 @@ module RbFind
     option %w(N nodirs    ), "skip directories"                           do @nodirs = true ; end
     option %w(B begin     ), "eval block before begin"                    do |blk| @blkbegin = blk ; end
     option %w(E end       ), "eval block after end"                       do |blk| @blkend   = blk ; end
-    option %w(f file      ), "read block expression from file"            do |nam| @block = File.open nam do |f| f.each { |l| l.chomp! } end ; end
+    option %w(f file      ), "read block expression from file"            do |nam| @block = File.read nam ; end
     option %w(K encoding  ), "encoding extern[:intern] (same as ruby -E)" do |str| e, i = str.split ":", 2 ; set_encoding e, i ; end
     option %w(  width-user), "width of user field"                        do |num| @wdu = num.to_i.nonzero? ; end
     option %w(  width-size), "width of size field"                        do |num| @wds = num.to_i.nonzero? ; end
@@ -161,6 +161,7 @@ module RbFind
             @block = @args.pop
           end
         end
+        @block = [ @block]
         output = case @puts
           when :ls    then long_fmt false, false, "mtime.lsish", opath, co
           when :alt   then long_fmt true,  true,  "mtime.long",  opath, co
@@ -168,7 +169,7 @@ module RbFind
           when :ino   then [ "spcsep ino.w8, nlink.w2, #{opath}"]
           when :plain then [ "puts #{opath}"]
           end
-        output and @block = [ "if (", [ @block], ") then", output, "end"]
+        output and @block = [ "if (", @block, ") then", output, "end"]
 
       end
 
