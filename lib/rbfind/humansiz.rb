@@ -48,7 +48,7 @@ class Numeric                   # sizes in bytes
   def GiB ; self * Gb ; end
   def TiB ; self * Tb ; end
 
-  PREFIXES = " kMGTPEZY".scan /./   # :nodoc:
+  PREFIXES = " kMGTPEZY"
 
   # :call-seq:
   #    num.to_h()  -> str
