@@ -167,7 +167,7 @@ module RbFind
             @block = @args.pop
           end
         end
-        @block = [ @block]
+        @block = [ "$_, $. = name, count", @block]
         output = case @puts
           when :ls    then long_fmt false, false, "mtime.lsish", opath, co
           when :alt   then long_fmt true,  true,  "mtime.long",  opath, co
